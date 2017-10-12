@@ -776,6 +776,16 @@ class MainConf(BaseConfig):
         self._add_option('downloadonly', BoolOption(False, runtimeonly=True))
         self._add_option('ignorearch', BoolOption(False))
 
+        # Add for fetch spdx and srpm
+        self._add_option('spdx_repodir', UrlListOption())
+        self._add_option('spdx_download', PathOption('/', abspath=True))
+        self._add_option('srpm_repodir', UrlListOption())
+        self._add_option('srpm_download', PathOption('/', abspath=True))
+        #self._add_option('spdx_repodir', PathOption('/', abspath=True))
+        #self._add_option('spdx_download', PathOption('/', abspath=True))
+        #self._add_option('srpm_repodir', PathOption('/', abspath=True))
+        #self._add_option('srpm_download', PathOption('/', abspath=True))
+
     @property
     def get_reposdir(self):
         # :api
