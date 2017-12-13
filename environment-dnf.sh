@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 #export TARGET_ROOTFS=$1
 #export REPO_DIR=$2
