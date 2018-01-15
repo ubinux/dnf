@@ -4,6 +4,7 @@
 #
 import sys, os, copy, textwrap, snack, string, time, re
 from snack import * 
+from dnf.cli.format import *
 
 ACTION_INSTALL    = 0
 ACTION_REMOVE     = 1
@@ -606,7 +607,7 @@ def PKGINSTActionWindow(insScreen, lstSubject, iPosition):
 # Output:
 #   None
 #------------------------------------------------------------
-def PKGINSTPackageInfoWindow(insScreen, ctrl, pkg):
+def PKGINSTPackageInfoWindow(insScreen, pkg):
     # Create Main Text
     (main_width, main_height) = GetHotKeyMainSize(insScreen)
     name     = pkg.name
@@ -615,7 +616,7 @@ def PKGINSTPackageInfoWindow(insScreen, ctrl, pkg):
     arch     = pkg.arch
     size     = format_number(float(pkg._size))
     repo     = pkg.repoid
-    summ     = pkg.Summary
+    summ     = pkg.summary
     url      = pkg.url
     license  = pkg.license
     desc     = pkg.description    
@@ -628,7 +629,7 @@ def PKGINSTPackageInfoWindow(insScreen, ctrl, pkg):
     main_text.append("Version : %s\n" % ver)
     main_text.append("Release : %s\n" % rel)
     main_text.append("Arch    : %s\n" % arch)
-    main_text.append("Size    : %ld bytes\n" % size)
+    main_text.append("Size    : %s\n" % size)
     main_text.append("Repo    : %s\n\n" % repo)
 
     main_text.append("Summary:\n")
