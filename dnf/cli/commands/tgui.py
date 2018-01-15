@@ -15,7 +15,7 @@ import dnf.exceptions
 import hawkey
 import logging
 
-from dnf.cli.commands.window import *
+from dnf.cli.window import *
 import sys, os, copy, textwrap, snack, string, time, re, shutil
 from snack import *
 
