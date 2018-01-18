@@ -21,6 +21,7 @@ from snack import *
 
 import dnf.cli.demand
 import dnf.cli.option_parser
+import dnf.cli.commands.shell
 import dnf.conf
 import dnf.conf.parser
 import dnf.conf.substitutions
@@ -72,22 +73,26 @@ class TguiCommand(commands.Command):
     summary = _('Enter tgui interface.')
 
     def configure(self):
-        """Verify that conditions are met so that this command can run.
-        That there are enabled repositories with gpg keys, and that
-        this command is called with appropriate arguments.
-        """
-        demands = self.cli.demands
-        demands.sack_activation = True
-        demands.available_repos = True
-        demands.resolving = True
-        demands.root_user = True
-        commands._checkGPGKey(self.base, self.cli)
-        #print("self.opts = ", self.opts)
-        #commands._checkEnabledRepo(self.base, self.opts.filenames)
+        self.cli.demands = dnf.cli.commands.shell.ShellDemandSheet()
 
     def run(self, command=None, argv=None):
         logger.debug("Enter tgui interface.")
         self.PKGINSTDispMain()
+
+    def run_dnf_command(self, s_line):
+        """Execute the subcommand you put in.
+        """
+        opts = self.cli.optparser.parse_main_args(s_line)
+        cmd_cls = self.cli.cli_commands.get(opts.command)
+        cmd = cmd_cls(self)
+        try:
+            opts = self.cli.optparser.parse_command_args(cmd, s_line)
+            cmd.cli = self.cli
+            cmd.cli.demands = copy.deepcopy(self.cli.demands)
+            cmd.configure()
+            cmd.run()
+        except:
+            pass
 
     def PKGINSTDispMain(self):
         STAGE_INSTALL_TYPE = 1
@@ -117,7 +122,7 @@ class TguiCommand(commands.Command):
             screen = StartHotkeyScreen(_TXT_ROOT_TITLE)
             if screen == None:
                 sys.exit(1)
-            install_type   = ACTION_INSTALL
+            install_type = ACTION_INSTALL
             stage = STAGE_INSTALL_TYPE
  
             def __init_pkg_type():
@@ -137,6 +142,7 @@ class TguiCommand(commands.Command):
                 pkgTypeList.append(pkgType_ptest)
 
                 return pkgTypeList
+
             pkgTypeList = __init_pkg_type()
             selected_pkgs = []
             selected_pkgs_spec = []
@@ -188,15 +194,7 @@ class TguiCommand(commands.Command):
                         else:
                             continue
                     else:
-                        if install_type==ACTION_REMOVE:
-                            #TODO
-                            install_type=ACTION_REMOVE
-                        elif install_type==ACTION_UPGRADE:
-                            #TODO
-                            install_type=ACTION_REMOVE
-
                         stage = STAGE_PACKAGE
-
 
                     selected_pkgs = []
                     selected_pkgs_spec = []
@@ -288,31 +286,12 @@ class TguiCommand(commands.Command):
                                 s_line = ["remove", pkg.name]
                             elif install_type==ACTION_UPGRADE:
                                 s_line = ["upgrade", pkg.name]
-                            opts = self.cli.optparser.parse_main_args(s_line)
-                            cmd_cls = self.cli.cli_commands.get(opts.command)
-                            cmd = cmd_cls(self)
-                            try:
-                                opts = self.cli.optparser.parse_command_args(cmd, s_line)
-                                cmd.cli = self.cli
-                                cmd.cli.demands = copy.deepcopy(self.cli.demands)
-                                cmd.configure()
-                                cmd.run()
-                            except:
-                                pass
+                            self.run_dnf_command(s_line)
+
                         if install_type == ACTION_INSTALL:  #selected_pkgs_spec
                             for pkg in selected_pkgs_spec:
                                 s_line = ["install", pkg.name]
-                                opts = self.cli.optparser.parse_main_args(s_line)
-                                cmd_cls = self.cli.cli_commands.get(opts.command)
-                                cmd = cmd_cls(self)
-                                try:
-                                    opts = self.cli.optparser.parse_command_args(cmd, s_line)
-                                    cmd.cli = self.cli
-                                    cmd.cli.demands = copy.deepcopy(self.cli.demands)
-                                    cmd.configure()
-                                    cmd.run()
-                                except:
-                                    pass
+                                self.run_dnf_command(s_line)
 
                         if no_gpl3:
                             result = self.showChangeSet(screen)
