@@ -1,0 +1,196 @@
+From 52131b7f1e3fa8524606b274d74053a16156a2df Mon Sep 17 00:00:00 2001
+From: Zheng Ruoqin <zhengrq.fnst@cn.fujitsu.com>
+Date: Wed, 17 Jan 2018 05:07:56 +0000
+Subject: [PATCH] Added some nativesdk oss for dnf-host.
+
+Signed-off-by: Zheng Ruoqin <zhengrq.fnst@cn.fujitsu.com>
+---
+ meta/classes/toolchain-scripts.bbclass             |  1 +
+ .../nativesdk-packagegroup-sdk-host.bb             |  4 +++
+ meta/recipes-core/update-rc.d/update-rc.d_0.7.bb   |  2 +-
+ .../createrepo-c/createrepo-c_git.bb               |  8 ++++-
+ meta/recipes-devtools/file/file_5.31.bb            |  2 ++
+ meta/recipes-devtools/rpm/rpm_git.bb               | 34 ++++++++++++++++++----
+ .../newt/libnewt-python_0.52.20.bb                 |  2 +-
+ meta/recipes-extended/newt/libnewt_0.52.20.bb      |  2 +-
+ meta/recipes-extended/slang/slang_2.3.1a.bb        |  2 +-
+ 9 files changed, 47 insertions(+), 10 deletions(-)
+
+diff --git a/meta/classes/toolchain-scripts.bbclass b/meta/classes/toolchain-scripts.bbclass
+index 9bcfe70..108fe5c 100644
+--- a/meta/classes/toolchain-scripts.bbclass
++++ b/meta/classes/toolchain-scripts.bbclass
+@@ -96,6 +96,7 @@ toolchain_shared_env_script () {
+ 	echo 'export CPPFLAGS="${TARGET_CPPFLAGS}"' >> $script
+ 	echo 'export KCFLAGS="--sysroot=$SDKTARGETSYSROOT"' >> $script
+ 	echo 'export OECORE_DISTRO_VERSION="${DISTRO_VERSION}"' >> $script
++        echo 'export MACHINE_ARCH=${MACHINE_ARCH}' >> $script
+ 	echo 'export OECORE_SDK_VERSION="${SDK_VERSION}"' >> $script
+ 	echo 'export ARCH=${ARCH}' >> $script
+ 	echo 'export CROSS_COMPILE=${TARGET_PREFIX}' >> $script
+diff --git a/meta/recipes-core/packagegroups/nativesdk-packagegroup-sdk-host.bb b/meta/recipes-core/packagegroups/nativesdk-packagegroup-sdk-host.bb
+index aee4a03..0679dcd 100644
+--- a/meta/recipes-core/packagegroups/nativesdk-packagegroup-sdk-host.bb
++++ b/meta/recipes-core/packagegroups/nativesdk-packagegroup-sdk-host.bb
+@@ -25,6 +25,10 @@ RDEPENDS_${PN} = "\
+     nativesdk-cmake \
+     nativesdk-postinst-intercept \
+     ${@bb.utils.contains('DISTRO_FEATURES', 'wayland', 'nativesdk-wayland', '', d)} \
++    nativesdk-libnewt-python \
++    nativesdk-createrepo-c \
++    nativesdk-gpgme \
++    nativesdk-update-rc.d \
+     "
+ 
+ RDEPENDS_${PN}_darwin = "\
+diff --git a/meta/recipes-core/update-rc.d/update-rc.d_0.7.bb b/meta/recipes-core/update-rc.d/update-rc.d_0.7.bb
+index 6fc6f6e..2a5ddec 100644
+--- a/meta/recipes-core/update-rc.d/update-rc.d_0.7.bb
++++ b/meta/recipes-core/update-rc.d/update-rc.d_0.7.bb
+@@ -30,4 +30,4 @@ do_install() {
+ 	install -m 0755 ${S}/update-rc.d ${D}${sbindir}/update-rc.d
+ }
+ 
+-BBCLASSEXTEND = "native"
++BBCLASSEXTEND = "native nativesdk"
+diff --git a/meta/recipes-devtools/createrepo-c/createrepo-c_git.bb b/meta/recipes-devtools/createrepo-c/createrepo-c_git.bb
+index 3176136..26ef655 100644
+--- a/meta/recipes-devtools/createrepo-c/createrepo-c_git.bb
++++ b/meta/recipes-devtools/createrepo-c/createrepo-c_git.bb
+@@ -21,7 +21,7 @@ inherit cmake pkgconfig bash-completion distutils3-base
+ 
+ EXTRA_OECMAKE = " -DPYTHON_INSTALL_DIR=${PYTHON_SITEPACKAGES_DIR} -DPYTHON_DESIRED=3"
+ 
+-BBCLASSEXTEND = "native"
++BBCLASSEXTEND = "native nativesdk"
+ 
+ # Direct createrepo to read rpm configuration from our sysroot, not the one it was compiled in
+ do_install_append_class-native() {
+@@ -29,3 +29,9 @@ do_install_append_class-native() {
+                 RPM_CONFIGDIR=${STAGING_LIBDIR_NATIVE}/rpm
+ }
+ 
++do_install_append_class-nativesdk() {
++        create_wrapper ${D}/${bindir}/createrepo_c \
++                RPM_CONFIGDIR=${SDKPATHNATIVE}${libdir_nativesdk}/rpm
++        rm -rf ${D}/etc
++}
++
+diff --git a/meta/recipes-devtools/file/file_5.31.bb b/meta/recipes-devtools/file/file_5.31.bb
+index 1b1f502..b38b7b4 100644
+--- a/meta/recipes-devtools/file/file_5.31.bb
++++ b/meta/recipes-devtools/file/file_5.31.bb
+@@ -43,6 +43,8 @@ do_install_append_class-nativesdk() {
+ 
+ BBCLASSEXTEND = "native nativesdk"
+ PROVIDES_append_class-native = " file-replacement-native"
++PROVIDES_append_class-nativesdk = " file-replacement-nativesdk"
++
+ # Don't use NATIVE_PACKAGE_PATH_SUFFIX as that hides libmagic from anyone who
+ # depends on file-replacement-native.
+ bindir_append_class-native = "/file-native"
+diff --git a/meta/recipes-devtools/rpm/rpm_git.bb b/meta/recipes-devtools/rpm/rpm_git.bb
+index 7866314..761af2d 100644
+--- a/meta/recipes-devtools/rpm/rpm_git.bb
++++ b/meta/recipes-devtools/rpm/rpm_git.bb
+@@ -54,6 +54,7 @@ S = "${WORKDIR}/git"
+ 
+ DEPENDS = "nss libarchive db file popt xz bzip2 dbus elfutils python3"
+ DEPENDS_append_class-native = " file-replacement-native bzip2-replacement-native"
++DEPENDS_append_class-nativesdk = " file-replacement-nativesdk"
+ 
+ inherit autotools gettext pkgconfig python3native
+ export PYTHON_ABI
+@@ -70,6 +71,7 @@ EXTRA_OECONF_append_libc-musl = " --disable-nls"
+ #
+ # Also disable plugins, so that rpm doesn't attempt to inhibit shutdown via session dbus
+ EXTRA_OECONF_append_class-native = " --sysconfdir=/etc --localstatedir=/var --disable-plugins"
++EXTRA_OECONF_append_class-nativesdk = " --sysconfdir=/etc --localstatedir=/var --disable-plugins"
+ 
+ BBCLASSEXTEND = "native nativesdk"
+ 
+@@ -78,7 +80,18 @@ PACKAGECONFIG[imaevm] = "--with-imaevm,,ima-evm-utils"
+ 
+ # Direct rpm-native to read configuration from our sysroot, not the one it was compiled in
+ # libmagic also has sysroot path contamination, so override it
+-do_install_append_class-native() {
++add_native_or_sdk_wrapper(){
++        if [ "$1" = "nativesdk" ]; then
++                RPM_CONFIGDIR=${SDKPATHNATIVE}${libdir_nativesdk}/rpm
++                RPM_ETCCONFIGDIR=${SDKPATHNATIVE}
++                MAGIC=${SDKPATHNATIVE}${datadir_native}/misc/magic.mgc
++
++        else
++                RPM_CONFIGDIR=${STAGING_LIBDIR_NATIVE}/rpm
++                RPM_ETCCONFIGDIR=${STAGING_DIR_NATIVE}
++                MAGIC=${STAGING_DIR_NATIVE}${datadir_native}/misc/magic.mgc
++        fi
++
+         tools="\
+                 ${bindir}/rpm \
+                 ${bindir}/rpm2archive \
+@@ -94,16 +107,27 @@ do_install_append_class-native() {
+ 
+         for tool in $tools; do
+                 create_wrapper ${D}$tool \
+-                        RPM_CONFIGDIR=${STAGING_LIBDIR_NATIVE}/rpm \
+-                        RPM_ETCCONFIGDIR=${STAGING_DIR_NATIVE} \
+-                        MAGIC=${STAGING_DIR_NATIVE}${datadir_native}/misc/magic.mgc \
++                        RPM_CONFIGDIR=${RPM_CONFIGDIR} \
++                        RPM_ETCCONFIGDIR=${RPM_ETCCONFIGDIR} \
++                        MAGIC=${MAGIC} \
+                         RPM_NO_CHROOT_FOR_SCRIPTS=1
+         done
+ }
+ 
++do_install_append_class-native() {
++       add_native_or_sdk_wrapper "native"
++}
++do_install_append_class-nativesdk() {
++       add_native_or_sdk_wrapper "nativesdk"
++}
++
+ # Rpm's make install creates var/tmp which clashes with base-files packaging
+ do_install_append_class-target() {
+-    rm -rf ${D}/var
++       rm -rf ${D}/var
++}
++
++do_install_append_class-nativesdk() {
++       rm -rf ${D}/var
+ }
+ 
+ do_install_append () {
+diff --git a/meta/recipes-extended/newt/libnewt-python_0.52.20.bb b/meta/recipes-extended/newt/libnewt-python_0.52.20.bb
+index 20369ef..433d184 100644
+--- a/meta/recipes-extended/newt/libnewt-python_0.52.20.bb
++++ b/meta/recipes-extended/newt/libnewt-python_0.52.20.bb
+@@ -25,4 +25,4 @@ PACKAGES_remove = "whiptail"
+ 
+ FILES_${PN} = "${PYTHON_SITEPACKAGES_DIR}/*"
+ 
+-BBCLASSEXTEND = "native"
++BBCLASSEXTEND = "native nativesdk"
+diff --git a/meta/recipes-extended/newt/libnewt_0.52.20.bb b/meta/recipes-extended/newt/libnewt_0.52.20.bb
+index 65ce70c..264ef3b 100644
+--- a/meta/recipes-extended/newt/libnewt_0.52.20.bb
++++ b/meta/recipes-extended/newt/libnewt_0.52.20.bb
+@@ -51,4 +51,4 @@ do_compile_prepend() {
+ 
+ FILES_whiptail = "${bindir}/whiptail"
+ 
+-BBCLASSEXTEND = "native"
++BBCLASSEXTEND = "native nativesdk"
+diff --git a/meta/recipes-extended/slang/slang_2.3.1a.bb b/meta/recipes-extended/slang/slang_2.3.1a.bb
+index 0585c14..570e2fa 100644
+--- a/meta/recipes-extended/slang/slang_2.3.1a.bb
++++ b/meta/recipes-extended/slang/slang_2.3.1a.bb
+@@ -78,4 +78,4 @@ FILES_${PN} += "${libdir}/${BPN}/v2/modules/ ${datadir}/slsh/"
+ PARALLEL_MAKE = ""
+ PARALLEL_MAKEINST = ""
+ 
+-BBCLASSEXTEND = "native"
++BBCLASSEXTEND = "native nativesdk"
+-- 
+1.8.3.1
+

@@ -1,0 +1,73 @@
+From c7f8caad8ed40d61977ddc2ad120249141339690 Mon Sep 17 00:00:00 2001
+From: Zheng Ruoqin <zhengrq.fnst@cn.fujitsu.com>
+Date: Wed, 17 Jan 2018 05:08:33 +0000
+Subject: [PATCH] Modified the URL of dnf intead of upstream.
+
+Signed-off-by: Zheng Ruoqin <zhengrq.fnst@cn.fujitsu.com>
+---
+ meta/recipes-devtools/dnf/dnf_2.6.3.bb | 28 +++++++++++++++++++---------
+ 1 file changed, 19 insertions(+), 9 deletions(-)
+
+diff --git a/meta/recipes-devtools/dnf/dnf_2.6.3.bb b/meta/recipes-devtools/dnf/dnf_2.6.3.bb
+index 3ed6a74..9847101 100644
+--- a/meta/recipes-devtools/dnf/dnf_2.6.3.bb
++++ b/meta/recipes-devtools/dnf/dnf_2.6.3.bb
+@@ -4,29 +4,26 @@ LIC_FILES_CHKSUM = "file://COPYING;md5=b234ee4d69f5fce4486a80fdaf4a4263 \
+                     file://PACKAGE-LICENSING;md5=bfc29916e11321be06924c4fb096fdcc \
+                    "
+ 
+-SRC_URI = "git://github.com/rpm-software-management/dnf.git \
+-           file://0029-Do-not-set-PYTHON_INSTALL_DIR-by-running-python.patch \
+-           file://0030-Run-python-scripts-using-env.patch \
+-           file://0001-Do-not-prepend-installroot-to-logdir.patch \
+-           file://0001-Do-not-hardcode-etc-and-systemd-unit-directories.patch \
+-           file://0001-Corretly-install-tmpfiles.d-configuration.patch \
+-           file://0001-Check-conf.releasever-instead-of-releasever.patch \
++SRC_URI = "git://github.com/ubinux/dnf.git;branch=dnf-yocto2.4 \
+            "
+ 
+-SRCREV = "be2585183ec4485ee4d5e121f242d8669296f065"
++SRCREV = "9607667fad095ed9ce9c033f2d8820ecca6f21cb"
+ UPSTREAM_CHECK_GITTAGREGEX = "(?P<pver>\d+(\.\d+)+)"
+ 
+ S = "${WORKDIR}/git"
+ 
+ inherit cmake gettext bash-completion distutils3-base systemd
+ 
+-DEPENDS += "libdnf librepo libcomps python3-iniparse"
++DEPENDS += "libdnf librepo libcomps python3-iniparse libnewt-python"
+ 
+ # manpages generation requires http://www.sphinx-doc.org/
+ EXTRA_OECMAKE = " -DWITH_MAN=0 -DPYTHON_INSTALL_DIR=${PYTHON_SITEPACKAGES_DIR} -DPYTHON_DESIRED=3"
+ 
+ BBCLASSEXTEND = "native nativesdk"
+ RDEPENDS_${PN}_class-target += "python3-core python3-codecs python3-netclient python3-email python3-threading python3-distutils librepo python3-shell python3-subprocess libcomps libdnf python3-sqlite3 python3-compression python3-rpm python3-iniparse python3-json python3-importlib python3-curses python3-argparse python3-misc python3-gpg"
++
++RDEPENDS_${PN}_class-nativesdk +=  "python3-core python3-codecs python3-netclient python3-email python3-threading python3-distutils librepo python3-shell python3-subprocess libcomps libdnf python3-sqlite3 python3-compression python3-rpm python3-iniparse python3-json python3-importlib python3-curses python3-argparse python3-misc python3-gpg gpgme update-rc.d "
++
+ # Recommend gnupg so that GPG signature check on repository metadata is possible
+ RRECOMMENDS_${PN}_class-target += "gnupg"
+ 
+@@ -45,6 +42,19 @@ do_install_append_class-native() {
+                 RPM_NO_CHROOT_FOR_SCRIPTS=1
+ }
+ 
++do_install_append_class-nativesdk() {
++        create_wrapper ${D}/${bindir}/dnf \
++                RPM_CONFIGDIR=${SDKPATHNATIVE}${libdir_nativesdk}/rpm \
++                RPM_NO_CHROOT_FOR_SCRIPTS=1
++        install -m 0755 ${S}/environment-dnf.sh ${D}/${bindir}/environment-dnf.sh
++        install -m 0755 ${S}/dnf-host ${D}/${bindir}/dnf-host
++}
++
++do_install_append_class-target() {
++        install -d ${D}${sysconfdir}/yum.repos.d
++        install -m 0644 ${WORKDIR}/oe-remote-repo.repo.sample ${D}${sysconfdir}/yum.repos.d
++}
++
+ SYSTEMD_SERVICE_${PN} = "dnf-makecache.service dnf-makecache.timer \
+                          dnf-automatic-download.service dnf-automatic-download.timer \
+                          dnf-automatic-install.service dnf-automatic-install.timer \
+-- 
+1.8.3.1
+
