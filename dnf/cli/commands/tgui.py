@@ -385,12 +385,11 @@ class TguiCommand(commands.Command):
             display_pkgs = copy.copy(packages)
 
         if no_gpl3:
-            for pkg in (ypl.installed, ypl.available):
-                licence = pkg.license
-                if licence:
-                    if "GPLv3" in licence:
+            for pkg in (ypl.installed + ypl.available):
+                license = pkg.license
+                if license:
+                    if "GPLv3" in license:
                         display_pkgs.remove(pkg)
-                break
             packages = copy.copy(display_pkgs) #backup all pkgs
 
         if pkgTypeList != None:
@@ -611,11 +610,10 @@ class TguiCommand(commands.Command):
         gplv3_pkgs = []
         pkgs = self.opts.pkg_specs
         for pkg in pkgs:
-            licence = pkg.license
-            if licence:
-                if "GPLv3" in licence:
+            license = pkg.license
+            if license:
+                if "GPLv3" in license:
                     gplv3_pkgs.append(pkg)
-            break
         if len(gplv3_pkgs) > 0:
             hkey = ConfirmGplv3Window(screen, gplv3_pkgs)
             if hkey == "y":
