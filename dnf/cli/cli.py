@@ -942,7 +942,7 @@ class Cli(object):
             logger.warning(_("Unable to detect release version (use '--releasever' to specify "
                              "release version)"))
 
-        for opt in ('cachedir', 'logdir', 'persistdir'):
+        for opt in ('cachedir', 'persistdir'):
             conf.prepend_installroot(opt)
 
         self.base._logging._setup_from_dnf_conf(conf)
