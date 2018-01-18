@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 #DEFAULT_TARGET_ ROOTFS=""
 WORKDIR=`pwd`
