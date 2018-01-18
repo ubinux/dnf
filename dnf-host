@@ -118,7 +118,7 @@ elif [ $1 = "help" -o $1 = "--help" -o $1 = "-h" -o $1 = "-H" ]; then
         echo "   \$ dnf-host [options] COMMAND "
         echo "   In this case, the usage is as same as dnf:"
         echo ""
-        dnf -y -c ${TARGET_ROOTFS}/etc/dnf/dnf.conf --setopt=reposdir=${TARGET_ROOTFS}/etc/yum.repos.d --installroot=${TARGET_ROOTFS} --setopt=logdir=$WORKDIR/ help
+        dnf -y -c ${TARGET_ROOTFS}/etc/dnf/dnf-host.conf --setopt=reposdir=${TARGET_ROOTFS}/etc/yum.repos.d --installroot=${TARGET_ROOTFS} --setopt=logdir=$WORKDIR/ help
     fi
 elif [ $1 = "show" ]; then
     if [ ! -f $WORKDIR/.env-dnf ]; then
@@ -139,7 +139,7 @@ else
         exit 0
     else
         source $WORKDIR/.env-dnf
-        dnf -c ${TARGET_ROOTFS}/etc/dnf/dnf.conf --setopt=reposdir=${TARGET_ROOTFS}/etc/yum.repos.d --repofrompath=oe-repo,${REPO_DIR} --installroot=${TARGET_ROOTFS} --setopt=logdir=$WORKDIR/ --nogpgcheck $*
+        dnf -c ${TARGET_ROOTFS}/etc/dnf/dnf-host.conf --setopt=reposdir=${TARGET_ROOTFS}/etc/yum.repos.d --repofrompath=oe-repo,${REPO_DIR} --installroot=${TARGET_ROOTFS} --setopt=logdir=$WORKDIR/ --nogpgcheck $*
     fi
 fi
 

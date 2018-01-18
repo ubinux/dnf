@@ -91,16 +91,16 @@ fi
 #necessary dnf config
 if [ ! -d $TARGET_ROOTFS/etc/dnf ]; then
     mkdir -p $TARGET_ROOTFS/etc/dnf
-    touch $TARGET_ROOTFS/etc/dnf/dnf.conf
+    touch $TARGET_ROOTFS/etc/dnf/dnf-host.conf
 fi
 
 #clean the original content in dnf.conf file
-echo "[main]" > $TARGET_ROOTFS/etc/dnf/dnf.conf
+echo "[main]" > $TARGET_ROOTFS/etc/dnf/dnf-host.conf
 #Add config_path in dnf.conf file
-echo "spdx_repodir=$SPDXREPODIR" >> $TARGET_ROOTFS/etc/dnf/dnf.conf
-echo "spdx_download=$SPDXDIR" >> $TARGET_ROOTFS/etc/dnf/dnf.conf
-echo "srpm_repodir=$SRPMREPODIR" >> $TARGET_ROOTFS/etc/dnf/dnf.conf
-echo "srpm_download=$SRPMDIR" >> $TARGET_ROOTFS/etc/dnf/dnf.conf
+echo "spdx_repodir=$SPDXREPODIR" >> $TARGET_ROOTFS/etc/dnf/dnf-host.conf
+echo "spdx_download=$SPDXDIR" >> $TARGET_ROOTFS/etc/dnf/dnf-host.conf
+echo "srpm_repodir=$SRPMREPODIR" >> $TARGET_ROOTFS/etc/dnf/dnf-host.conf
+echo "srpm_download=$SRPMDIR" >> $TARGET_ROOTFS/etc/dnf/dnf-host.conf
 
 if [ ! -d $TARGET_ROOTFS/etc/dnf/vars ]; then
     mkdir -p $TARGET_ROOTFS/etc/dnf/vars

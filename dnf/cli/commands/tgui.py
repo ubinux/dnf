@@ -155,44 +155,11 @@ class TguiCommand(commands.Command):
                 #==============================
                 if stage == STAGE_INSTALL_TYPE:
  
-                    install_type  = PKGINSTActionWindowCtrl(screen, Install_actions, install_type)
+                    install_type = PKGINSTActionWindowCtrl(screen, Install_actions, install_type)
 
-                    if install_type==ACTION_GET_SOURCE:
-                        src_path=PKGINSTPathInputWindow(screen, \
-                                                        True, \
-                                                        "  Input Path  ", \
-                                                        "Specify the path where the source archives you want to download:")
-                        if not src_path == None:
-                            output_path = PKGINSTPathInputWindow(screen, \
-                                                                 False, \
-                                                                 "  Input Path  ", \
-                                                                 "  Specify the output path:                                 ", \
-                                                                 "./source")
-                            if not output_path == None:
-                                stage = STAGE_PACKAGE
-                            else:
-                                continue
-                        else:
-                            continue
-
-
-                    elif install_type== ACTION_GET_SPDX:
-                        src_path=PKGINSTPathInputWindow(screen, \
-                                                        True, \
-                                                        "  Input Path  ", \
-                                                        "Specify the path where the SPDX files you want to download:")
-                        if not src_path == None:
-                            output_path = PKGINSTPathInputWindow(screen, \
-                                                                 False, \
-                                                                 "  Input Path  ", \
-                                                                 "  Specify the output path:                                 ", \
-                                                                 "./spdx")
-                            if not output_path == None:
-                                stage = STAGE_PACKAGE
-                            else:
-                                continue
-                        else:
-                            continue
+                    if install_type == ACTION_GET_SOURCE or install_type == ACTION_GET_SPDX:
+                        stage = STAGE_PACKAGE
+                        continue
                     else:
                         stage = STAGE_PACKAGE
 
@@ -208,7 +175,6 @@ class TguiCommand(commands.Command):
                             no_gpl3 = True
                     else:
                         no_gpl3 = False
-
 
 
                 #==============================
@@ -265,26 +231,26 @@ class TguiCommand(commands.Command):
                 # Process function
                 # ==============================
                 elif stage == STAGE_PROCESS:
-                    if install_type==ACTION_GET_SOURCE or install_type==ACTION_GET_SPDX:
+                    if install_type == ACTION_GET_SOURCE or install_type == ACTION_GET_SPDX:
                         if screen != None:
                             StopHotkeyScreen(screen)
                             screen = None
-                        if install_type==ACTION_GET_SOURCE:
+                        if install_type == ACTION_GET_SOURCE:
                             srcdir_path = self.base.conf.srpm_repodir
                             destdir_path = self.base.conf.srpm_download
                             dnf.cli.utils.fetchSPDXorSRPM('srpm', selected_pkgs, srcdir_path, destdir_path)
-                        elif install_type==ACTION_GET_SPDX:
+                        elif install_type == ACTION_GET_SPDX:
                             srcdir_path = self.base.conf.spdx_repodir
                             destdir_path = self.base.conf.spdx_download
                             dnf.cli.utils.fetchSPDXorSRPM('spdx', selected_pkgs, srcdir_path, destdir_path)
                         break
                     else:
                         for pkg in selected_pkgs:           #selected_pkgs
-                            if install_type==ACTION_INSTALL:
+                            if install_type == ACTION_INSTALL:
                                 s_line = ["install", pkg.name]
-                            elif install_type==ACTION_REMOVE:
+                            elif install_type == ACTION_REMOVE:
                                 s_line = ["remove", pkg.name]
-                            elif install_type==ACTION_UPGRADE:
+                            elif install_type == ACTION_UPGRADE:
                                 s_line = ["upgrade", pkg.name]
                             self.run_dnf_command(s_line)
 
@@ -297,7 +263,7 @@ class TguiCommand(commands.Command):
                             result = self.showChangeSet(screen)
                             #continue to install
                             if result == "y":
-                                if install_type   == ACTION_INSTALL:
+                                if install_type == ACTION_INSTALL:
                                     confirm_type = CONFIRM_INSTALL
 
                                 hkey = HotkeyExitWindow(screen, confirm_type)
@@ -622,58 +588,3 @@ class TguiCommand(commands.Command):
                 return "n"
         else:
             return "y"
-
-    def installSPDX(self, selected_pkgs, src_dir, output_dir):
-
-        sys.stdout.write("Preparing...\n")
-        ctn = 0
-        ctnget = 0
-        numpkg = len(selected_pkgs)
-
-        for pkg in selected_pkgs:
-
-            ctn += 1
-
-            for loader in pkg.loaders:
-
-                info = loader.getInfo(pkg)
-                src = info.getSource()
-                src = "-".join(src.split("-")[:-1])
-
-                lic = info.getLicense()
-                srcdir = src_dir
-
-                if srcdir:
-                    srcpath = srcdir + "/" + src + ".spdx"
-                    srcdpath = output_dir
-                    if not os.path.exists(srcdpath):
-                        os.mkdir(srcdpath)
-                    srcdpath = srcdpath + "/" + lic
-                    if not os.path.exists(srcdpath):
-                        os.mkdir(srcdpath)
-
-                    srcdpath = srcdpath + '/' + src + ".spdx"
-
-                    ctnget += 1
-                    str = "[" + ("%d" % int(ctn * 100 / numpkg)).rjust(3) + "%]" + ("%d" % ctnget).rjust(4) + \
-                          ": Getting: " + src + ".spdx"
-                    if len(str) > 43:
-                        str = str[:40] + "..."
-
-                    str=str.ljust(43)
-
-                    if srcdir.startswith("/"):
-                        if os.path.exists(srcpath):
-                            if not os.path.exists(srcdpath):
-                                shutil.copyfile(srcpath, srcdpath)
-                                sys.stdout.write(str + "  OK\n")
-                                break
-                            else:
-                                sys.stdout.write(str + "  Exists\n")
-                                break
-                        else:
-                            sys.stdout.write(str + "  No SPDX file\n")
-                            sys.stderr.write("Source SPDX file: " + srcpath + " does not exist....\n")
-                            break
-                else:
-                    break
