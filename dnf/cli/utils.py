@@ -239,6 +239,8 @@ def fetchSPDXorSRPM(option, install_pkgs, srcdir_path, destdir_path):
     for pkg in sorted(install_pkgs):
         sourcerpm = pkg.sourcerpm
         if option == 'spdx':
+            if "-locale" in sourcerpm:
+                sourcerpm = sourcerpm.replace('-locale', '')
             match = ''.join(re.findall("-r\d{1,}.src.rpm",sourcerpm))
             '''filter the .src.rpm and r*'''
             spdxname = sourcerpm.replace(match, '') + ".spdx"   
