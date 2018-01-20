@@ -276,7 +276,8 @@ class TguiCommand(commands.Command):
                                     if screen != None:
                                         StopHotkeyScreen(screen)
                                         screen = None
-                                    self.base.conf.assumeyes = True
+                                    if install_type != ACTION_REMOVE:
+                                        self.base.conf.assumeyes = True
                                     break
                                 elif hkey == "n":
                                     stage = STAGE_PKG_TYPE
@@ -287,7 +288,8 @@ class TguiCommand(commands.Command):
                             if screen != None:
                                 StopHotkeyScreen(screen)
                                 screen = None
-                            self.base.conf.assumeyes = True
+                                if install_type != ACTION_REMOVE:
+                                    self.base.conf.assumeyes = True
                             break
 
             if screen != None:
