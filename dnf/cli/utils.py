@@ -24,7 +24,7 @@ import dnf.util
 import logging
 import os
 import time
-import re, shutil, urllib.request, librepo
+import re, shutil, urllib.request, librepo, filecmp
 
 _USER_HZ = os.sysconf(os.sysconf_names['SC_CLK_TCK'])
 logger = logging.getLogger('dnf')
@@ -142,7 +142,10 @@ def fetchSPDXorSRPM(option, install_pkgs, srcdir_path, destdir_path):
     def copy_package(option, pkgname):
         src_path = srcdir_path + '/' + pkgname
         dest_path = destdir_path + '/' + pkgname
+
         if os.path.exists(src_path):
+            if os.path.exists(dest_path) and filecmp.cmp(src_path,dest_path):
+                return
             try:
                 shutil.copyfile(src_path, dest_path)
                 logger.info(_("%s copy is OK."), pkgname)
@@ -156,14 +159,6 @@ def fetchSPDXorSRPM(option, install_pkgs, srcdir_path, destdir_path):
     def http_download_file(option, pkgname):
         url = srcdir_path + '/' + pkgname
         file_name = destdir_path + '/' + pkgname
-        
-        #try:  
-        #    u = urllib.request.urlopen(url)  
-        #except urllib.error.HTTPError as e:
-        #    logger.error(_("Error code: %s"), e)
-        #    if e.code == 404:
-        #        logger.error(_("%s file: %s does not exist....."), option, pkgname)
-        #    return
         
         try:
             """Example of the simplest usage"""
