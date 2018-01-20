@@ -260,7 +260,11 @@ class TguiCommand(commands.Command):
                                 self.run_dnf_command(s_line)
 
                         if no_gpl3:
-                            result = self.showChangeSet(screen)
+                            #obtain the transaction
+                            self.base.resolve(self.cli.demands.allow_erasing)
+                            install_set = self.base.transaction.install_set
+
+                            result = self.showChangeSet(screen, install_set)
                             #continue to install
                             if result == "y":
                                 if install_type == ACTION_INSTALL:
@@ -273,7 +277,6 @@ class TguiCommand(commands.Command):
                                         StopHotkeyScreen(screen)
                                         screen = None
                                     self.base.conf.assumeyes = True
-                                    self.base.do_transaction()
                                     break
                                 elif hkey == "n":
                                     stage = STAGE_PKG_TYPE
@@ -285,7 +288,6 @@ class TguiCommand(commands.Command):
                                 StopHotkeyScreen(screen)
                                 screen = None
                             self.base.conf.assumeyes = True
-                            self.base.do_transaction()
                             break
 
             if screen != None:
@@ -334,21 +336,25 @@ class TguiCommand(commands.Command):
         installed_available = False
         reponame = None
 
+        try:
+            ypl = self.base.returnPkgLists(
+                pkgnarrow, patterns, installed_available, reponame)
+        except dnf.exceptions.Error as e:
+            return 1, [str(e)]
+
         if pkgTypeList == None:
-            try:
-                ypl = self.base.returnPkgLists(
-                    pkgnarrow, patterns, installed_available, reponame)
-            except dnf.exceptions.Error as e:
-                return 1, [str(e)]
-            else:
-                pkg_available = copy.copy(ypl.available)
-                pkg_installed = copy.copy(ypl.installed)
-                packages = ypl.installed + ypl.available
-                display_pkgs = pkg_installed + pkg_available
-                sorted(packages)
-                sorted(display_pkgs)
+            pkg_available = copy.copy(ypl.available)
+            pkg_installed = copy.copy(ypl.installed)
+            packages = ypl.installed + ypl.available
+            display_pkgs = pkg_installed + pkg_available
+            sorted(packages)
+            sorted(display_pkgs)
         else:
-            display_pkgs = copy.copy(packages)
+            pkg_available = copy.copy(ypl.available)
+            pkg_installed = copy.copy(ypl.installed)
+            packages = ypl.installed + ypl.available
+            display_pkgs = pkg_installed + pkg_available
+            #display_pkgs = copy.copy(packages)
 
         if no_gpl3:
             for pkg in (ypl.installed + ypl.available):
@@ -572,10 +578,10 @@ class TguiCommand(commands.Command):
                         search = None
                 stage = STAGE_SELECT
 
-    def showChangeSet(self, screen):
+    def showChangeSet(self, screen, pkgs_set):
         gplv3_pkgs = []
-        pkgs = self.opts.pkg_specs
-        for pkg in pkgs:
+        #pkgs = self.opts.pkg_specs
+        for pkg in pkgs_set:
             license = pkg.license
             if license:
                 if "GPLv3" in license:
