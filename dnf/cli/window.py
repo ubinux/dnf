@@ -630,7 +630,8 @@ def PKGINSTPackageInfoWindow(insScreen, pkg):
     main_text.append("Release : %s\n" % rel)
     main_text.append("Arch    : %s\n" % arch)
     main_text.append("Size    : %s\n" % size)
-    main_text.append("Repo    : %s\n\n" % repo)
+    main_text.append("Repo    : %s\n" % repo)
+    main_text.append("License : %s\n\n" % license)
 
     main_text.append("Summary:\n")
     wrapper.initial_indent    = "  "
