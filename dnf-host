@@ -8,6 +8,15 @@ DEFAULT_SPDX_REPO_DIR=file://$WORKDIR/spdx_repo
 DEFAULT_SPDX_DESTINATION_DIR=$WORKDIR/spdx_download
 DEFAULT_SRPM_REPO_DIR=file://$WORKDIR/srpm_repo
 DEFAULT_SRPM_DESTINATION_DIR=$WORKDIR/srpm_download
+TAR="false"
+ARGS=$*
+CHECK_TAR=`echo $ARGS | grep "\--rootfs-tar"`
+
+#check the --rootfs-tar arg
+if [ -n "$CHECK_TAR" ]; then
+    TAR="true"
+    ARGS=`echo ${ARGS/--rootfs-tar/}`
+fi
 
 if [ $1 = "init" -a $# = 1 ]; then
     #get repo directory
@@ -91,9 +100,9 @@ if [ $1 = "init" -a $# = 1 ]; then
         mkdir -p $DEFINE_SRPM_DESTINATION_DIR
     fi
 
-if [ ${DEFINE_REPO_DIR:0:4} = "file" ];then
-    DEFINE_REPO_DIR=${DEFINE_REPO_DIR#*//}
-fi
+    if [ ${DEFINE_REPO_DIR:0:4} = "file" ];then
+        DEFINE_REPO_DIR=${DEFINE_REPO_DIR#*//}
+    fi
 
 
     environment-dnf.sh $DEFINE_ROOTFS_DIR $DEFINE_REPO_DIR $DEFINE_SPDX_REPO_DIR $DEFINE_SPDX_DESTINATION_DIR $DEFINE_SRPM_REPO_DIR $DEFINE_SRPM_DESTINATION_DIR
@@ -139,7 +148,12 @@ else
         exit 0
     else
         source $WORKDIR/.env-dnf
-        dnf -c ${TARGET_ROOTFS}/etc/dnf/dnf-host.conf --setopt=reposdir=${TARGET_ROOTFS}/etc/yum.repos.d --repofrompath=oe-repo,${REPO_DIR} --installroot=${TARGET_ROOTFS} --setopt=logdir=$WORKDIR/ --nogpgcheck $*
+        dnf -c ${TARGET_ROOTFS}/etc/dnf/dnf-host.conf --setopt=reposdir=${TARGET_ROOTFS}/etc/yum.repos.d --repofrompath=oe-repo,${REPO_DIR} --installroot=${TARGET_ROOTFS} --setopt=logdir=$WORKDIR/ --nogpgcheck $ARGS
+        if [ $TAR = "true" ]; then
+            cd ${TARGET_ROOTFS}
+            Date=`date +%Y-%m-%d-%H%M` 
+            tar -cvjf ../rootfs-${Date}.tar.bz2 ./*
+        fi
     fi
 fi
 
