@@ -1,4 +1,4 @@
-# tgui.py
+# tui.py
 # Tgui CLI command.
 #
 # Copyright (C) 2018 FUJITSU LIMITED
@@ -64,19 +64,19 @@ ATTENTON_HAVE_UPGRADE   = 1
 
 logger = logging.getLogger('dnf')
 
-class TguiCommand(commands.Command):
+class TuiCommand(commands.Command):
     """A class containing methods needed by the cli to execute the
-    tgui command.
+    tui command.
     """
 
-    aliases = ('tgui',)
-    summary = _('Enter tgui interface.')
+    aliases = ('tui',)
+    summary = _('Enter tui interface.')
 
     def configure(self):
         self.cli.demands = dnf.cli.commands.shell.ShellDemandSheet()
 
     def run(self, command=None, argv=None):
-        logger.debug("Enter tgui interface.")
+        logger.debug("Enter tui interface.")
         self.PKGINSTDispMain()
 
     def run_dnf_command(self, s_line):
