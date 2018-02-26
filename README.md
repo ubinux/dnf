@@ -149,6 +149,7 @@ After init, then, you can manage packages by TUI or command line.
        - Yes : GPLv3 packages can be selected as same as the other packages.
         
    2) install
+
         ┌────────────────────────────┤ Select package ├────────────────────────────┐
         │                                                                          │
         │ [I] acl                                                                ↑ │
@@ -336,39 +337,41 @@ $ dnf-host install bash
 #### 3.1.5.1 manage srpm or spdx when you run "dnf-host install" by add the following option:
 
     (1) --with-srpm
-        ```
+```
         [test@localhost dnf_test]$ dnf-host install --with-srpm bash 
-		 ......
+	 ......
 
         [test@localhost dnf_test]$ ls srpm_download/
         bash-4.3.30.src.rpm
-       ```        
+```        
     (2) --with-spdx
-        ```
+```
         [test@localhost dnf_test]$ dnf-host install --with-spdx bash 
-	......
+        ......
 
         [test@localhost dnf_test]$ ls spdx_download/
         bash-4.3.30.spdx
-        ```
+```
+
 #### 3.1.5.2 manage srpm or spdx only
 
     If you want to manage srpm or spdx files without installation, you can use the subcommand as following:
     (1) fetchsrpm
-        ```
+```
         [test@localhost dnf_test]$ dnf-host fetchsrpm bash 
-	......
+        ......
 	[test@localhost dnf_test]$ ls srpm_download/
         bash-4.3.30.src.rpm
-        ```
+```
     (2) fetchspdx
         fetchsrpm is the same as fetchspdx
-	```	
+```	
         [test@localhost dnf_test]$ dnf-host fetchspdx bash 
-	......
+        ......
 	[test@localhost dnf_test]$ ls spdx_download/
         bash-4.3.30.spdx
-        ```
+```
+
 ## 3.2 On target
 
 ### 3.2.1  Configuration
@@ -380,7 +383,7 @@ $ dnf-host install bash
 
         If you want to manage srpm or spdx files on target, you have to configure repository in /etc/dnf/dnf-host.conf.
         For example:
-        ```
+```
         [root@localhost target]# cat /etc/dnf/dnf-host.conf
         [main]
         gpgcheck=1
@@ -390,7 +393,8 @@ $ dnf-host install bash
         spdx_download=/home/root/spdx_download
         srpm_repodir=http://192.168.65.144/oe_repo/srpm_repo
         srpm_download=/home/root/srpm_download
-        ```
+```
+
 ### 3.2.2 Usage
 
 The same as dnf-host.
