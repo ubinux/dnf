@@ -174,7 +174,8 @@ After init, then, you can manage packages by TUI or command line.
         │ B:Back  I:Info  X:eXit                                                   │
         └──────────────────────────────────────────────────────────────────────────┘
 
-        Note
+       
+         Note
             - []  Means the package has not been selected or installed. If you want to install it, you can
                   select it by pressing space or enter.
             - [*] Means the package has been selcted and will be installed. If you don't want to install it,
