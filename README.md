@@ -31,35 +31,38 @@ Now, dnf can be used both on host and target(e.g. an arm board) environment.
     - Run as a non-root user that has sudo authority.
 
     (1) install the cross-development toolchain(e.g. for i586: poky-glibc-x86_64-meta-toolchain-i586-toolchain-2.4.1.sh)
+        and set up environment of toolchain.
+```
         $ sh poky-glibc-x86_64-meta-toolchain-i586-toolchain-2.4.1.sh
-		
-		set up environment of toolchain
         $ . /opt/poky/2.4.1/environment-setup-i586-poky-linux
-		
+```		
         Note
           - When you compilering toochain, make sure you have patched the patch of patches-yocto.
           - If you change a terminal, you should source toolchain again.
 
     (2）rpm packages
         Created by yocto, for example, one repo director in rpm format for x86 likes as followiung:
+```
         $ ls /home/test/workdir/dnf_test/oe_repo/
           rpm
         $ ls /home/test/workdir/dnf_test/oe_repo/rpm/
           i586  noarch  qemux86
+```
     (3）srpm packages
         If you enable "archiver " in you Yocto buid environment, you can get srpm packages for every OSS you build.
-			
+```			
         $ ls /home/test/workdir/dnf_test/srpm_repo
           bash-4.3.30-r0.src.rpm
 		  ......
-        
+```
+     
     (4）spdx files (https://github.com/dl9pf/meta-spdxscanner)
 	    Please reference to the README of meta-spdxscanner to get spdx files bu Yocto.
-		
+```		
         $ ls /home/test/workdir/dnf_test/spdx_repo
           bash-4.3.30.spdx
           ......
-
+```
 
 ### 3.1.2 Initialize
 
@@ -152,18 +155,18 @@ After init, then, you can manage packages by TUI or command line.
 
         ┌────────────────────────────┤ Select package ├────────────────────────────┐
         │                                                                          │
-        │ [I] acl                                                                ↑ │
-        │ [I] attr                                                               ▮ │
-        │ [*] base-files                                                         ▒ │
-        │ [ ] base-passwd                                                        ▒ │
-        │ [ ] base-passwd-update                                                 ▒ │
-        │ [ ] bash                                                               ▒ │
-        │ [ ] bash-bashbug                                                       ▒ │
-        │ [ ] bash-completion                                                    ▒ │
-        │ [ ] bash-completion-extra                                              ▒ │
-        │ [ ] bash-loadable                                                      ▒ │
-        │ [ ] bc                                                                 ▒ │
-        │ [ ] bind                                                               ↓ │
+        │ [I] acl                                                                  │
+        │ [I] attr                                                                 │
+        │ [*] base-files                                                           │
+        │ [ ] base-passwd                                                          │
+        │ [ ] base-passwd-update                                                   │
+        │ [ ] bash                                                                 │
+        │ [ ] bash-bashbug                                                         │
+        │ [ ] bash-completion                                                      │
+        │ [ ] bash-completion-extra                                                │
+        │ [ ] bash-loadable                                                        │
+        │ [ ] bc                                                                   │
+        │ [ ] bind                                                                 │
         │ ------------------------------------------------------------------------ │
         │ All Packages [3935]    Installed Packages [0]    Selected Packages [0]   │
         │ ------------------------------------------------------------------------ │
@@ -293,7 +296,7 @@ After init, then, you can manage packages by TUI or command line.
                 select it by pressing space or enter.
           - [U] Means the package has been selcted ,installed and will be upgraded.
 
-    (7) Create source archive & Create spdx archive
+    (7) manage source archive & spdx archive
 	  You can choose the package that you want to upgrade after enter "Create spdx archive" or "Create spdx archive" in main interface.
 	  
         ┌────────────────────────────┤ Select package ├────────────────────────────┐
