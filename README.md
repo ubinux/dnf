@@ -25,12 +25,13 @@ Now, dnf can be used both on host and target(e.g. an arm board) environment.
   * rpm packages(mandatory)
   * sprpm packages(optional)
   * spdx files(optional)
-  
+```
   Note
-  * SELinux must be closed.
-  * Run as a non-root user that has sudo authority.
-
-#### (1) install the cross-development toolchain(e.g. for i586: poky-glibc-x86_64-meta-toolchain-i586-toolchain-2.4.1.sh) and set up environment of toolchain.
+  - SELinux must be closed.
+  - Run as a non-root user that has sudo authority.
+```
+#### (1) toolchain
+&emsp;&emsp;install the cross-development toolchain created by Yocto(e.g. for i586: poky-glibc-x86_64-meta-toolchain-i586-toolchain-2.4.1.sh) and set up environment of toolchain.
 ```
       $ sh poky-glibc-x86_64-meta-toolchain-i586-toolchain-2.4.1.sh
       $ . /opt/poky/2.4.1/environment-setup-i586-poky-linux		
@@ -56,7 +57,7 @@ Now, dnf can be used both on host and target(e.g. an arm board) environment.
 
      
 #### (4) spdx files (https://github.com/dl9pf/meta-spdxscanner)
-&emsp;&emsp;Please reference to the README of meta-spdxscanner to get spdx files bu Yocto.
+&emsp;&emsp;Please reference to the README of meta-spdxscanner to get spdx files by Yocto.
 ```		
       $ ls /home/test/workdir/dnf_test/spdx_repo
         bash-4.3.30.spdx
@@ -152,7 +153,7 @@ After init, then, you can manage packages by TUI or command line.
        - Yes : GPLv3 packages can be selected as same as the other packages.
  ```     
  
- #### (2) install
+ #### (2) customize packages
 ```
         ┌────────────────────────────┤ Select package ├────────────────────────────┐
         │                                                                          │
@@ -338,11 +339,11 @@ $ dnf-host install bash
 
 ```
 
-### 3.1.5 manage srpm packages & spdx files
+#### 3.1.4.1 manage srpm packages & spdx files
 
-#### 3.1.5.1 manage srpm or spdx when you run "dnf-host install" by add the following option:
+   (1) manage srpm or spdx when you run "dnf-host install" by add the following option:
 
-   (1) --with-srpm
+   * --with-srpm
 ```
       [test@localhost dnf_test]$ dnf-host install --with-srpm bash 
       ......
@@ -350,7 +351,7 @@ $ dnf-host install bash
       [test@localhost dnf_test]$ ls srpm_download/
       bash-4.3.30.src.rpm
 ```        
-   (2) --with-spdx
+   * --with-spdx
 ```
       [test@localhost dnf_test]$ dnf-host install --with-spdx bash 
       ......
@@ -359,17 +360,18 @@ $ dnf-host install bash
       bash-4.3.30.spdx
 ```
 
-#### 3.1.5.2 manage srpm or spdx only
+   (2) manage srpm or spdx only
 
-If you want to manage srpm or spdx files without installation, you can use the subcommand as following:  
-  (1) fetchsrpm
+   If you want to manage srpm or spdx files without installation, you can use the subcommand as following:  
+
+  * fetchsrpm
 ```
       [test@localhost dnf_test]$ dnf-host fetchsrpm bash 
       ......
       [test@localhost dnf_test]$ ls srpm_download/
       bash-4.3.30.src.rpm
 ```
-  (2) fetchspdx
+  * fetchspdx
 <br>&emsp;&emsp;fetchsrpm is the same as fetchspdx
        
 ```	
