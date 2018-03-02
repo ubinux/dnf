@@ -1,4 +1,4 @@
-# tgui.py
+# tui.py
 # Tgui CLI command.
 #
 # Copyright (C) 2018 FUJITSU LIMITED
@@ -61,22 +61,23 @@ CONFIRM_GET_SPDX   = 6
 
 ATTENTON_NONE           = 0
 ATTENTON_HAVE_UPGRADE   = 1
+ATTENTON_NONE_UPGRADE   = 2
 
 logger = logging.getLogger('dnf')
 
-class TguiCommand(commands.Command):
+class TuiCommand(commands.Command):
     """A class containing methods needed by the cli to execute the
-    tgui command.
+    tui command.
     """
 
-    aliases = ('tgui',)
-    summary = _('Enter tgui interface.')
+    aliases = ('tui',)
+    summary = _('Enter tui interface.')
 
     def configure(self):
         self.cli.demands = dnf.cli.commands.shell.ShellDemandSheet()
 
     def run(self, command=None, argv=None):
-        logger.debug("Enter tgui interface.")
+        logger.debug("Enter tui interface.")
         self.PKGINSTDispMain()
 
     def run_dnf_command(self, s_line):
@@ -432,7 +433,8 @@ class TguiCommand(commands.Command):
                     if pkg not in ypl.installed:
                         if pkg in display_pkgs:
                             display_pkgs.remove(pkg)
-            elif install_type==ACTION_INSTALL:
+
+            elif install_type == ACTION_INSTALL:
                 if(self._DeleteUpgrade(packages,display_pkgs)):
                     hkey = HotkeyAttentionWindow(screen, ATTENTON_HAVE_UPGRADE)
 
@@ -484,10 +486,26 @@ class TguiCommand(commands.Command):
                         if pkg in display_pkgs:
                             display_pkgs.remove(pkg)
 
+            if install_type == ACTION_UPGRADE:
+                self.base.upgrade_all()
+                self.base.resolve(self.cli.demands.allow_erasing)
+                install_set = self.base.transaction.install_set
+              
+                display_pkgs = []
+                for pkg in install_set:
+                    display_pkgs.append(pkg)
+
+                # clean the _transaction
+                self.base.close()
+                self.base._transaction = None
+                self.base.fill_sack()
 
         if len(display_pkgs)==0:
             if install_type==ACTION_INSTALL:
                 stage = STAGE_NEXT
+            elif install_type==ACTION_UPGRADE:
+                hkey = HotkeyAttentionWindow(screen, ATTENTON_NONE_UPGRADE)
+                return ("b", selected_pkgs, packages)
             else:
                 hkey = HotkeyAttentionWindow(screen, ATTENTON_NONE)
                 return ("b", selected_pkgs, packages)

@@ -23,7 +23,8 @@ Confirm_type_list = [("Exit","\n Do you really terminate it?\n\n"), \
                      ]
 Attention_type_list=[("Attention!","\n You must installed some packages first!\n\n"), \
                      ("Attention!","Have some advanced version packages.\nShow installed only!\n\
-You can enter 'upgrade' scene to upgrade \ninstalled packages.\n") \
+You can enter 'upgrade' scene to upgrade \ninstalled packages.\n"), \
+                     ("Attention!","\n There is no packages to be upgrdaed!\n\n") \
                      ]
 
 SIGN_SELECT=["*", "-", "U", "S", "S"]

@@ -74,11 +74,9 @@ class Fetch_srpmCommand(commands.Command):
         ypl = self.base.returnPkgLists(
                 pkgnarrow = 'all', patterns = pkg_specs)
 
-        # check if the packager has been installed
         #check if the pkg can be found
-        if ypl.available:
-            install_pkgs = ypl.available
-            install_pkgs = install_pkgs + ypl.installed
+        if ypl.available or ypl.installed:
+            install_pkgs = ypl.available + ypl.installed
         else:
             logger.info(_("Error: No matches found."))
             return
