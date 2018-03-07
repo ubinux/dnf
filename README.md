@@ -27,41 +27,40 @@ Now, dnf can be used both on host and target(e.g. an arm board) environment.
   * spdx files(optional)
   
   Note
-    - SELinux must be closed.
-    - Run as a non-root user that has sudo authority.
+  * SELinux must be closed.
+  * Run as a non-root user that has sudo authority.
 
-    (1) install the cross-development toolchain(e.g. for i586: poky-glibc-x86_64-meta-toolchain-i586-toolchain-2.4.1.sh)
-        and set up environment of toolchain.
+#### (1) install the cross-development toolchain(e.g. for i586: poky-glibc-x86_64-meta-toolchain-i586-toolchain-2.4.1.sh) and set up environment of toolchain.
 ```
-        $ sh poky-glibc-x86_64-meta-toolchain-i586-toolchain-2.4.1.sh
-        $ . /opt/poky/2.4.1/environment-setup-i586-poky-linux
-```		
-        Note
-          - When you compilering toochain, make sure you have patched the patch of patches-yocto.
-          - If you change a terminal, you should source toolchain again.
-
-    (2）rpm packages
-        Created by yocto, for example, one repo director in rpm format for x86 likes as followiung:
+      $ sh poky-glibc-x86_64-meta-toolchain-i586-toolchain-2.4.1.sh
+      $ . /opt/poky/2.4.1/environment-setup-i586-poky-linux		
+      Note
+        - When you compilering toochain, make sure you have patched the patch of patches-yocto.
+        - If you change a terminal, you should source toolchain again.
 ```
-        $ ls /home/test/workdir/dnf_test/oe_repo/
-          rpm
-        $ ls /home/test/workdir/dnf_test/oe_repo/rpm/
-          i586  noarch  qemux86
+#### (2) rpm packages
+   Created by yocto, for example, one repo director in rpm format for x86 likes as following:
 ```
-    (3）srpm packages
-        If you enable "archiver " in you Yocto buid environment, you can get srpm packages for every OSS you build.
+      $ ls /home/test/workdir/dnf_test/oe_repo/
+        rpm
+      $ ls /home/test/workdir/dnf_test/oe_repo/rpm/
+        i586  noarch  qemux86
+```
+#### (3) srpm packages
+      If you enable "archiver " in you Yocto buid environment, you can get srpm packages for every OSS you build.
 ```			
-        $ ls /home/test/workdir/dnf_test/srpm_repo
-          bash-4.3.30-r0.src.rpm
-		  ......
+      $ ls /home/test/workdir/dnf_test/srpm_repo
+        bash-4.3.30-r0.src.rpm
+        ......
 ```
+
      
-    (4）spdx files (https://github.com/dl9pf/meta-spdxscanner)
-	    Please reference to the README of meta-spdxscanner to get spdx files bu Yocto.
+#### (4) spdx files (https://github.com/dl9pf/meta-spdxscanner)
+      Please reference to the README of meta-spdxscanner to get spdx files bu Yocto.
 ```		
-        $ ls /home/test/workdir/dnf_test/spdx_repo
-          bash-4.3.30.spdx
-          ......
+      $ ls /home/test/workdir/dnf_test/spdx_repo
+        bash-4.3.30.spdx
+        ......
 ```
 
 ### 3.1.2 Initialize
@@ -105,13 +104,13 @@ After init, then, you can manage packages by TUI or command line.
 
 
   Dnf TUI(textual user interface) Function is developed for dnf-host. With TUI, it is easy to customize rootfs of target.
-  Note
-    Please make sure your screen is at least 24 lines and 80 columns.
-
+  <br/>Note
+  <br/>&emsp;Please make sure your screen is at least 24 lines and 80 columns.
+  
   By the following command you can enter the main interface of TUI.
   
+  ```
   [test@localhost dnf_test]$ dnf-host tui
-
         ┌────────────────────────┤ Select your operation ├─────────────────────────┐
         │                                                                          │
         │ Install                                                                  │
@@ -132,11 +131,12 @@ After init, then, you can manage packages by TUI or command line.
         │ ------------------------------------------------------------------------ │
         │ SPACE/ENTER:select  I:Info  X:eXit                                       │
         └──────────────────────────────────────────────────────────────────────────┘
+```
 
-  1) dnf-host TUI can help you filter GPLv3.
-     If you select "install" in above, dnf-host will ask you whether you want to install packages 
+#### (1) dnf-host TUI can help you filter GPLv3.
+&emsp;&emsp;If you select "install" in above, dnf-host will ask you whether you want to install packages 
 	 which license is GPLv3.
-	 
+```	 
 	   
                   ┌───────────────┤ License ├────────────────┐
                   │                                          │
@@ -150,9 +150,10 @@ After init, then, you can manage packages by TUI or command line.
 				  
        - No  : GPLv3 packages will not be selected and not display in the next step.
        - Yes : GPLv3 packages can be selected as same as the other packages.
-        
-   2) install
-
+ ```     
+ 
+ #### (2) install
+```
         ┌────────────────────────────┤ Select package ├────────────────────────────┐
         │                                                                          │
         │ [I] acl                                                                  │
@@ -183,10 +184,11 @@ After init, then, you can manage packages by TUI or command line.
             - [I] Means the package has been installed in your rootfs.
 			
 			- Next: If you press "N" or "n" in the interface, it will go to the next step.
+```
 
-    (3) customize packages type
-        You can select the package type that you want to install into rootfs.
-
+#### (3) customize packages type
+&emsp;&emsp;You can select the package type that you want to install into rootfs.
+```
         ┌───────────────────┤ Customize special type packages ├────────────────────┐
         │                                                                          │
         │ locale [ ]                                                               │
@@ -208,11 +210,11 @@ After init, then, you can manage packages by TUI or command line.
 
         Note
           You can get details about the package type by pressing "I" or "i".
-
-    (4) Confirm install
-	    If you select "N"/"n" in the "license" interface, but there is GPLV3 ppackages in the dependences,
-		A dialog box will ask your decision.
-	    
+```
+#### (4) Confirm install
+&emsp;&emsp;If you select "N"/"n" in the "license" interface, but there is GPLV3 ppackages in the dependences,
+<br>&emsp;&emsp;A dialog box will ask your decision.
+```	    
           ┌────────────────────────┤ GPLv3 that be depended ├────────────────────────┐
           │                                                                          │
           │ bash                                                                     │
@@ -244,10 +246,10 @@ After init, then, you can manage packages by TUI or command line.
                   │ Y:yes  N:no                              │
                   └──────────────────────────────────────────┘
 	    After you confirming your customization, the installation will begin.
-
-    (5) Remove
-      You can choose the package that you want to upgrade after enter "Remove" in main interface..
-
+```
+#### (5) Remove
+&emsp;&emsp;You can choose the package that you want to upgrade after enter "Remove" in main interface..
+```
         ┌────────────────────────────┤ Select package ├────────────────────────────┐
         │                                                                          │
         │ [-] libc6                                                                │
@@ -268,10 +270,10 @@ After init, then, you can manage packages by TUI or command line.
         │ SPACE/ENTER:select/unselect  A:select/unselect All  R:seaRch N:Next      │
         │ B:Back  I:Info  X:eXit                                                   │
         └──────────────────────────────────────────────────────────────────────────┘
-
-    (6) Upgrade
-      You can choose the package that you want to upgrade after enter "upgrade" in main interface.
-
+```
+#### (6) Upgrade
+&emsp;&emsp;You can choose the package that you want to upgrade after enter "upgrade" in main interface.
+```
         ┌────────────────────────────┤ Select package ├────────────────────────────┐
         │                                                                          │
         │ [U] base-files                                                           │
@@ -296,10 +298,10 @@ After init, then, you can manage packages by TUI or command line.
           - []  Means the package could be upgrade and has not been selected. If you want to upgrade it, you can
                 select it by pressing space or enter.
           - [U] Means the package has been selcted ,installed and will be upgraded.
-
-    (7) manage source archive & spdx archive
-	  You can choose the package that you want to upgrade after enter "Create spdx archive" or "Create spdx archive" in main interface.
-	  
+```
+#### (7) manage source archive & spdx archive
+&emsp;&emsp;You can choose the package that you want to upgrade after enter "Create spdx archive" or "Create spdx archive" in main interface.
+```	  
         ┌────────────────────────────┤ Select package ├────────────────────────────┐
         │                                                                          │
         │ [S] base-files                                                           │
@@ -323,7 +325,7 @@ After init, then, you can manage packages by TUI or command line.
         Note
           - []  Means the package has not been selected.
           - [S] Means the package has been selcted ,installed and will be used to created.
-
+```
 ### 3.1.4 Manage packages by command line
 
 After init, you can use dnf-host to manage packages such as using dnf in other Distro (e.g. Fedora)". More information please reference to https://fedoraproject.org/wiki/DNF?rd=Dnf.
@@ -340,53 +342,53 @@ $ dnf-host install bash
 
 #### 3.1.5.1 manage srpm or spdx when you run "dnf-host install" by add the following option:
 
-    (1) --with-srpm
+   (1) --with-srpm
 ```
-        [test@localhost dnf_test]$ dnf-host install --with-srpm bash 
-	 ......
+      [test@localhost dnf_test]$ dnf-host install --with-srpm bash 
+      ......
 
-        [test@localhost dnf_test]$ ls srpm_download/
-        bash-4.3.30.src.rpm
+      [test@localhost dnf_test]$ ls srpm_download/
+      bash-4.3.30.src.rpm
 ```        
-    (2) --with-spdx
+   (2) --with-spdx
 ```
-        [test@localhost dnf_test]$ dnf-host install --with-spdx bash 
-        ......
+      [test@localhost dnf_test]$ dnf-host install --with-spdx bash 
+      ......
 
-        [test@localhost dnf_test]$ ls spdx_download/
-        bash-4.3.30.spdx
+      [test@localhost dnf_test]$ ls spdx_download/
+      bash-4.3.30.spdx
 ```
 
 #### 3.1.5.2 manage srpm or spdx only
 
-    If you want to manage srpm or spdx files without installation, you can use the subcommand as following:
-    (1) fetchsrpm
+If you want to manage srpm or spdx files without installation, you can use the subcommand as following:  
+  (1) fetchsrpm
 ```
-        [test@localhost dnf_test]$ dnf-host fetchsrpm bash 
-        ......
-	[test@localhost dnf_test]$ ls srpm_download/
-        bash-4.3.30.src.rpm
+      [test@localhost dnf_test]$ dnf-host fetchsrpm bash 
+      ......
+      [test@localhost dnf_test]$ ls srpm_download/
+      bash-4.3.30.src.rpm
 ```
-    (2) fetchspdx
-        fetchsrpm is the same as fetchspdx
+  (2) fetchspdx
+<br>&emsp;&emsp;fetchsrpm is the same as fetchspdx
+       
 ```	
-        [test@localhost dnf_test]$ dnf-host fetchspdx bash 
-        ......
-	[test@localhost dnf_test]$ ls spdx_download/
-        bash-4.3.30.spdx
+      [test@localhost dnf_test]$ dnf-host fetchspdx bash 
+      ......
+      [test@localhost dnf_test]$ ls spdx_download/
+      bash-4.3.30.spdx
 ```
 
 ## 3.2 On target
 
 ### 3.2.1  Configuration
 
-    (1)configure rpm repo (mandatory)
-        The same as using dnf on the other Distro (e.g. Fedora), you have to configure your rpm repo in /etc/yum.repos.d/Base.repo.
+#### (1) configure rpm repo (mandatory)  
+&emsp;&emsp;The same as using dnf on the other Distro (e.g. Fedora), you have to configure your rpm repo in /etc/yum.repos.d/Base.repo.
 
-    (2)configure srpm and spdx (optional)
-
-        If you want to manage srpm or spdx files on target, you have to configure repository in /etc/dnf/dnf-host.conf.
-        For example:
+#### (2) configure srpm and spdx (optional)  
+&emsp;&emsp;If you want to manage srpm or spdx files on target, you have to configure repository in /etc/dnf/dnf-host.conf.  
+&emsp;&emsp;For example:
 ```
         [root@localhost target]# cat /etc/dnf/dnf-host.conf
         [main]
@@ -404,7 +406,6 @@ $ dnf-host install bash
 The same as dnf-host.
 
 # 4. Documentation
-
 ***
 If you want to know more knowledge about dnf, read the documentation of dnf.
 The DNF package distribution contains man pages, dnf(8) and dnf.conf(8). It is also possible to [read the DNF documentation](http://dnf.readthedocs.org/)online, the page includes API documentation. There's also a [wiki](https://github.com/rpm-software-management/dnf/wiki) meant for contributors to DNF and related projects.
