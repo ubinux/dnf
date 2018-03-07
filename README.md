@@ -39,7 +39,7 @@ Now, dnf can be used both on host and target(e.g. an arm board) environment.
         - If you change a terminal, you should source toolchain again.
 ```
 #### (2) rpm packages
-   Created by yocto, for example, one repo director in rpm format for x86 likes as following:
+&emsp;&emsp;Created by yocto, for example, one repo director in rpm format for x86 likes as following:
 ```
       $ ls /home/test/workdir/dnf_test/oe_repo/
         rpm
@@ -47,7 +47,7 @@ Now, dnf can be used both on host and target(e.g. an arm board) environment.
         i586  noarch  qemux86
 ```
 #### (3) srpm packages
-      If you enable "archiver " in you Yocto buid environment, you can get srpm packages for every OSS you build.
+&emsp;&emsp;If you enable "archiver " in you Yocto buid environment, you can get srpm packages for every OSS you build.
 ```			
       $ ls /home/test/workdir/dnf_test/srpm_repo
         bash-4.3.30-r0.src.rpm
@@ -56,7 +56,7 @@ Now, dnf can be used both on host and target(e.g. an arm board) environment.
 
      
 #### (4) spdx files (https://github.com/dl9pf/meta-spdxscanner)
-      Please reference to the README of meta-spdxscanner to get spdx files bu Yocto.
+&emsp;&emsp;Please reference to the README of meta-spdxscanner to get spdx files bu Yocto.
 ```		
       $ ls /home/test/workdir/dnf_test/spdx_repo
         bash-4.3.30.spdx
