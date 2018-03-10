@@ -24,6 +24,9 @@ if [ $1 = "init" -a $# = 1 ]; then
     if [ -f .env-dnf ];then
         rm .env-dnf
     fi
+    if [ -f .md5 ];then
+        rm .md5
+    fi
     if [ -d $HIDDEN_ROOTFS_DIR ];then
         echo "Deleting temp rootfs......"
         rm -rf $HIDDEN_ROOTFS_DIR
@@ -156,13 +159,22 @@ else
         exit 0
     else
         source $WORKDIR/.env-dnf
+        if [ -f ${HIDDEN_ROOTFS}/var/lib/rpm/Packages -a $1 = "tui" ];then
+            md5sum -b ${HIDDEN_ROOTFS}/var/lib/rpm/Packages > .md5
+        fi
+        if [  $1 = "tui" ]; then
+            dnf -c ${HIDDEN_ROOTFS}/etc/dnf/dnf-host.conf --setopt=reposdir=${HIDDEN_ROOTFS}/etc/yum.repos.d --repofrompath=oe-repo,${REPO_DIR} --installroot=${HIDDEN_ROOTFS} --setopt=logdir=$WORKDIR/ --nogpgcheck clean metadata -q
+        fi
         dnf -c ${HIDDEN_ROOTFS}/etc/dnf/dnf-host.conf --setopt=reposdir=${HIDDEN_ROOTFS}/etc/yum.repos.d --repofrompath=oe-repo,${REPO_DIR} --installroot=${HIDDEN_ROOTFS} --setopt=logdir=$WORKDIR/ --nogpgcheck $ARGS
         if [ $TAR = "true" ]; then
             cd ${HIDDEN_ROOTFS}
             Date=`date +%Y%m%d%H%M` 
             tar -cjf ../rootfs-${Date}.tar.bz2 ./*
         fi
-        if [ $1 = "tui" ]; then
+        if [ -f .md5 ];then
+            md5sum -c .md5 --status > /dev/null
+        fi
+        if [  $? = 1 -a $1 = "tui" ]; then
             cd ${HIDDEN_ROOTFS}
             Date=`date +%Y%m%d%H%M`
             RELEASE=`echo $STRIP |awk -F '-' '{print $2}'`

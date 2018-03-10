@@ -63,6 +63,7 @@ else
         echo "Error! $REPO_DIR/rpm is not exist. "
         exit 0
     fi
+    echo "Creating repo"
     createrepo_c.real --update -q $REPO_DIR
 fi
 
