@@ -138,7 +138,7 @@ elif [ $1 = "help" -o $1 = "--help" -o $1 = "-h" -o $1 = "-H" ]; then
         echo "   \$ dnf-host [options] COMMAND "
         echo "   In this case, the usage is as same as dnf:"
         echo ""
-        dnf -y -c ${HIDDEN_ROOTFS}/etc/dnf/dnf-host.conf --setopt=reposdir=${HIDDEN_ROOTFS}/etc/yum.repos.d --installroot=${HIDDEN_ROOTFS} --setopt=logdir=$WORKDIR/ help
+        dnf -y -c ${HIDDEN_ROOTFS}/etc/dnf/dnf-host.conf --setopt=reposdir=${HIDDEN_ROOTFS}/etc/yum.repos.d --installroot=${HIDDEN_ROOTFS} --setopt=logdir=$WORKDIR/ help --releasever=None
     fi
 elif [ $1 = "show" ]; then
     if [ ! -f $WORKDIR/.env-dnf ]; then
@@ -163,9 +163,9 @@ else
             md5sum -b ${HIDDEN_ROOTFS}/var/lib/rpm/Packages > .md5
         fi
         if [  $1 = "tui" ]; then
-            dnf -c ${HIDDEN_ROOTFS}/etc/dnf/dnf-host.conf --setopt=reposdir=${HIDDEN_ROOTFS}/etc/yum.repos.d --repofrompath=oe-repo,${REPO_DIR} --installroot=${HIDDEN_ROOTFS} --setopt=logdir=$WORKDIR/ --nogpgcheck clean metadata -q
+            dnf -c ${HIDDEN_ROOTFS}/etc/dnf/dnf-host.conf --setopt=reposdir=${HIDDEN_ROOTFS}/etc/yum.repos.d --repofrompath=oe-repo,${REPO_DIR} --installroot=${HIDDEN_ROOTFS} --setopt=logdir=$WORKDIR/ --nogpgcheck clean metadata -q --releasever=None
         fi
-        dnf -c ${HIDDEN_ROOTFS}/etc/dnf/dnf-host.conf --setopt=reposdir=${HIDDEN_ROOTFS}/etc/yum.repos.d --repofrompath=oe-repo,${REPO_DIR} --installroot=${HIDDEN_ROOTFS} --setopt=logdir=$WORKDIR/ --nogpgcheck $ARGS
+        dnf -c ${HIDDEN_ROOTFS}/etc/dnf/dnf-host.conf --setopt=reposdir=${HIDDEN_ROOTFS}/etc/yum.repos.d --repofrompath=oe-repo,${REPO_DIR} --installroot=${HIDDEN_ROOTFS} --setopt=logdir=$WORKDIR/ --nogpgcheck $ARGS --releasever=None
         if [ $TAR = "true" ]; then
             cd ${HIDDEN_ROOTFS}
             Date=`date +%Y%m%d%H%M` 
