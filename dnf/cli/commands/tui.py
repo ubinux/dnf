@@ -498,7 +498,6 @@ class TuiCommand(commands.Command):
                 # clean the _transaction
                 self.base.close()
                 self.base._transaction = None
-                self.base.fill_sack()
 
         if len(display_pkgs)==0:
             if install_type==ACTION_INSTALL:
