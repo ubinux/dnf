@@ -166,19 +166,28 @@ else
             dnf -c ${HIDDEN_ROOTFS}/etc/dnf/dnf-host.conf --setopt=reposdir=${HIDDEN_ROOTFS}/etc/yum.repos.d --repofrompath=oe-repo,${REPO_DIR} --installroot=${HIDDEN_ROOTFS} --setopt=logdir=$WORKDIR/ --nogpgcheck clean metadata -q --releasever=None
         fi
         dnf -c ${HIDDEN_ROOTFS}/etc/dnf/dnf-host.conf --setopt=reposdir=${HIDDEN_ROOTFS}/etc/yum.repos.d --repofrompath=oe-repo,${REPO_DIR} --installroot=${HIDDEN_ROOTFS} --setopt=logdir=$WORKDIR/ --nogpgcheck $ARGS --releasever=None
+        Date=`date +%Y%m%d%H%M`
+        RELEASE=`echo $STRIP |awk -F '-' '{print $2}'`
+        ROOTFS_TAR=rootfs-${RELEASE}-${Date}.tar.bz2
         if [ $TAR = "true" ]; then
             cd ${HIDDEN_ROOTFS}
-            Date=`date +%Y%m%d%H%M` 
             tar -cjf ../rootfs-${Date}.tar.bz2 ./*
         fi
         if [ -f .md5 ];then
             md5sum -c .md5 --status > /dev/null
-        fi
-        if [  $? = 1 -a $1 = "tui" ]; then
+            if [  $? = 1 -a $1 = "tui" ]; then
+                cd ${HIDDEN_ROOTFS}
+                echo "Packing the tar file"
+                tar -cjf ../${ROOTFS_TAR} ./*
+                unset LD_PRELOAD
+                sudo mkdir -p ${TARGET_ROOTFS}/rootfs-${RELEASE}-${Date}
+                echo "Unpacking tar file to target dir"
+                sudo tar -xjf ../${ROOTFS_TAR} -C ${TARGET_ROOTFS}/rootfs-${RELEASE}-${Date} --numeric-owner
+                sudo rm ${TARGET_ROOTFS}/rootfs-${RELEASE}-${Date}/etc/dnf/dnf-host.conf
+                rm ../${ROOTFS_TAR}
+            fi
+        elif [ -f ${HIDDEN_ROOTFS}/var/lib/rpm/Packages -a $1 = "tui" ];then
             cd ${HIDDEN_ROOTFS}
-            Date=`date +%Y%m%d%H%M`
-            RELEASE=`echo $STRIP |awk -F '-' '{print $2}'`
-            ROOTFS_TAR=rootfs-${RELEASE}-${Date}.tar.bz2
             echo "Packing the tar file"
             tar -cjf ../${ROOTFS_TAR} ./*
             unset LD_PRELOAD
