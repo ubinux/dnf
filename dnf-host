@@ -20,7 +20,6 @@ if [ -n "$CHECK_TAR" ]; then
 fi
 
 if [ $1 = "init" -a $# = 1 ]; then
-    #get repo directory
     if [ -f .env-dnf ];then
         rm .env-dnf
     fi
@@ -31,81 +30,109 @@ if [ $1 = "init" -a $# = 1 ]; then
         echo "Deleting temp rootfs......"
         rm -rf $HIDDEN_ROOTFS_DIR
     fi
-    echo "The repo directory: (default:$WORKDIR/oe_repo)."
-    echo "Is this ok?[y/N]:"
-    read DEFINE_REPO_DIR_ANSWER
-    if [ $DEFINE_REPO_DIR_ANSWER = "N" ]; then
-        echo "Please input repo directory =>"
-        read DEFINE_REPO_DIR
-    else
-        DEFINE_REPO_DIR=$DEFAULT_REPO_DIR
-        echo "repo directory: $DEFINE_REPO_DIR"
-    fi
+
+    #get repo directory
+    while ((1)); do
+        echo "The repo directory: (default:$WORKDIR/oe_repo)."
+        echo "Is this ok?[Y/n]:"
+        read DEFINE_REPO_DIR_ANSWER
+        if [ `echo $DEFINE_REPO_DIR_ANSWER|tr [a-z] [A-Z]` = "N" ]; then
+            echo "Please input repo directory =>"
+            read DEFINE_REPO_DIR
+            break
+        elif [ `echo $DEFINE_REPO_DIR_ANSWER|tr [a-z] [A-Z]` = "Y" ]; then
+            DEFINE_REPO_DIR=$DEFAULT_REPO_DIR
+            echo "repo directory: $DEFINE_REPO_DIR"
+            break
+        fi
+    done
 
     #get rootfs destination directory
-    echo "The rootfs destination directory: (default: $DEFAULT_ROOTFS_DIR)."
-    echo "Is this ok?[y/N]:"
-    read DEFINE_ROOTFS_DIR_ANSWER
-    if [ $DEFINE_ROOTFS_DIR_ANSWER = "N" ]; then
-        echo "Please input rootfs destination directory =>"
-        read DEFINE_ROOTFS_DIR
-    else
-        DEFINE_ROOTFS_DIR=$DEFAULT_ROOTFS_DIR
-        echo "rootfs destination directory: $DEFINE_ROOTFS_DIR"
-    fi
+    while ((1)); do
+        echo "The rootfs destination directory: (default: $DEFAULT_ROOTFS_DIR)."
+        echo "Is this ok?[Y/n]:"
+        read DEFINE_ROOTFS_DIR_ANSWER
+        if [ `echo $DEFINE_ROOTFS_DIR_ANSWER|tr [a-z] [A-Z]` = "N" ]; then
+            echo "Please input rootfs destination directory =>"
+            read DEFINE_ROOTFS_DIR
+            break
+        elif [ `echo $DEFINE_ROOTFS_DIR_ANSWER|tr [a-z] [A-Z]` = "Y" ]; then
+            DEFINE_ROOTFS_DIR=$DEFAULT_ROOTFS_DIR
+            echo "rootfs destination directory: $DEFINE_ROOTFS_DIR"
+            break
+        fi
+    done
 
     #get SPDX repo directory
-    echo "The SPDX repo directory: (default: $DEFAULT_SPDX_REPO_DIR)."
-    echo "Is this ok?[y/N]:"
-    read DEFINE_SPDX_REPO_DIR_ANSWER
-    if [ $DEFINE_SPDX_REPO_DIR_ANSWER = "N" ]; then
-        echo "Please input SPDX repo directory =>"
-        read DEFINE_SPDX_REPO_DIR
-    else
-        DEFINE_SPDX_REPO_DIR=$DEFAULT_SPDX_REPO_DIR
-        echo "SPDX repo directory: $DEFINE_SPDX_REPO_DIR"
-    fi
+    while ((1)); do
+        echo "The SPDX repo directory: (default: $DEFAULT_SPDX_REPO_DIR)."
+        echo "Is this ok?[Y/n]:"
+        read DEFINE_SPDX_REPO_DIR_ANSWER
+        if [ `echo $DEFINE_SPDX_REPO_DIR_ANSWER|tr [a-z] [A-Z]` = "N" ]; then
+            echo "Please input SPDX repo directory =>"
+            read DEFINE_SPDX_REPO_DIR
+            break
+        elif [ `echo $DEFINE_SPDX_REPO_DIR_ANSWER|tr [a-z] [A-Z]` = "Y" ]; then
+            DEFINE_SPDX_REPO_DIR=$DEFAULT_SPDX_REPO_DIR
+            echo "SPDX repo directory: $DEFINE_SPDX_REPO_DIR"
+            break
+        fi
+    done
 
     #get SPDX file destination directory
-    echo "The SPDX file destination directory: (default: $DEFAULT_SPDX_DESTINATION_DIR)."
-    echo "Is this ok?[y/N]:"
-    read DEFINE_SPDX_DESTINATION_DIR_ANSWER
-    if [ $DEFINE_SPDX_DESTINATION_DIR_ANSWER = "N" ]; then
-        echo "Please input SPDX file destination directory =>"
-        read DEFINE_SPDX_DESTINATION_DIR
-    else
-        DEFINE_SPDX_DESTINATION_DIR=$DEFAULT_SPDX_DESTINATION_DIR
-        echo "SPDX file destination directory: $DEFINE_SPDX_DESTINATION_DIR"
-    fi
+    while ((1)); do
+        echo "The SPDX file destination directory: (default: $DEFAULT_SPDX_DESTINATION_DIR)."
+        echo "Is this ok?[Y/n]:"
+        read DEFINE_SPDX_DESTINATION_DIR_ANSWER
+        if [ `echo $DEFINE_SPDX_DESTINATION_DIR_ANSWER|tr [a-z] [A-Z]` = "N" ]; then
+            echo "Please input SPDX file destination directory =>"
+            read DEFINE_SPDX_DESTINATION_DIR
+            break
+        elif [ `echo $DEFINE_SPDX_DESTINATION_DIR_ANSWER|tr [a-z] [A-Z]` = "Y" ]; then
+            DEFINE_SPDX_DESTINATION_DIR=$DEFAULT_SPDX_DESTINATION_DIR
+            echo "SPDX file destination directory: $DEFINE_SPDX_DESTINATION_DIR"
+            break
+        fi
+    done
+
     if [ ! -d $DEFINE_SPDX_DESTINATION_DIR ];then
         echo "Create the SPDX file destination directory automatically"
         mkdir -p $DEFINE_SPDX_DESTINATION_DIR
     fi
 
     #get SRPM repo directory    
-    echo "The SRPM repo directory: (default: $DEFAULT_SRPM_REPO_DIR)."
-    echo "Is this ok?[y/N]:"
-    read DEFINE_SRPM_REPO_DIR_ANSWER
-    if [ $DEFINE_SRPM_REPO_DIR_ANSWER = "N" ]; then
-        echo "Please input SRPM repo directory =>"
-        read DEFINE_SRPM_REPO_DIR
-    else
-        DEFINE_SRPM_REPO_DIR=$DEFAULT_SRPM_REPO_DIR
-        echo "SRPM repo directory: $DEFINE_SRPM_REPO_DIR"
-    fi
+    while ((1)); do
+        echo "The SRPM repo directory: (default: $DEFAULT_SRPM_REPO_DIR)."
+        echo "Is this ok?[Y/n]:"
+        read DEFINE_SRPM_REPO_DIR_ANSWER
+        if [ `echo $DEFINE_SRPM_REPO_DIR_ANSWER|tr [a-z] [A-Z]` = "N" ]; then
+            echo "Please input SRPM repo directory =>"
+            read DEFINE_SRPM_REPO_DIR
+            break
+        elif [ `echo $DEFINE_SRPM_REPO_DIR_ANSWER|tr [a-z] [A-Z]` = "Y" ]; then
+            DEFINE_SRPM_REPO_DIR=$DEFAULT_SRPM_REPO_DIR
+            echo "SRPM repo directory: $DEFINE_SRPM_REPO_DIR"
+            break
+        fi
+    done
 
 
     #get SRPM file destination directory
-    echo "The SRPM file destination directory: (default: $DEFAULT_SRPM_DESTINATION_DIR)."
-    echo "Is this ok?[y/N]:"
-    read DEFINE_SRPM_DESTINATION_DIR_ANSWER
-    if [ $DEFINE_SRPM_DESTINATION_DIR_ANSWER = "N" ]; then
-        echo "Please input SRPM destination directory =>"
-        read DEFINE_SRPM_DESTINATION_DIR
-    else
-        DEFINE_SRPM_DESTINATION_DIR=$DEFAULT_SRPM_DESTINATION_DIR
-        echo "SRPM file destination directory: $DEFINE_SRPM_DESTINATION_DIR"
-    fi
+    while ((1)); do
+        echo "The SRPM file destination directory: (default: $DEFAULT_SRPM_DESTINATION_DIR)."
+        echo "Is this ok?[Y/n]:"
+        read DEFINE_SRPM_DESTINATION_DIR_ANSWER
+        if [ `echo $DEFINE_SRPM_DESTINATION_DIR_ANSWER|tr [a-z] [A-Z]` = "N" ]; then
+            echo "Please input SRPM destination directory =>"
+            read DEFINE_SRPM_DESTINATION_DIR
+            break
+        elif [ `echo $DEFINE_SRPM_DESTINATION_DIR_ANSWER|tr [a-z] [A-Z]` = "Y" ]; then
+            DEFINE_SRPM_DESTINATION_DIR=$DEFAULT_SRPM_DESTINATION_DIR
+            echo "SRPM file destination directory: $DEFINE_SRPM_DESTINATION_DIR"
+            break
+        fi
+    done
+
     if [ ! -d $DEFINE_SRPM_DESTINATION_DIR ];then
         echo "Create the SRPM file destination directory automatically"
         mkdir -p $DEFINE_SRPM_DESTINATION_DIR
@@ -114,7 +141,6 @@ if [ $1 = "init" -a $# = 1 ]; then
     if [ ${DEFINE_REPO_DIR:0:4} = "file" ];then
         DEFINE_REPO_DIR=${DEFINE_REPO_DIR#*//}
     fi
-
 
     environment-dnf.sh $HIDDEN_ROOTFS_DIR $DEFINE_REPO_DIR $DEFINE_SPDX_REPO_DIR $DEFINE_SPDX_DESTINATION_DIR $DEFINE_SRPM_REPO_DIR $DEFINE_SRPM_DESTINATION_DIR $DEFAULT_ROOTFS_DIR
      
