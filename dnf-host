@@ -32,67 +32,107 @@ if [ $1 = "init" -a $# = 1 ]; then
     fi
 
     #get repo directory
-    while ((1)); do
+    while true; do
         echo "The repo directory: (default:$WORKDIR/oe_repo)."
         echo "Is this ok?[Y/n]:"
         read DEFINE_REPO_DIR_ANSWER
-        if [ `echo $DEFINE_REPO_DIR_ANSWER|tr [a-z] [A-Z]` = "N" ]; then
+        if [ ! -n "$DEFINE_REPO_DIR_ANSWER" ];then
+            DEFINE_REPO_DIR_ANSWER="Y"
+        fi
+        case $DEFINE_REPO_DIR_ANSWER in
+        N|n)  
             echo "Please input repo directory =>"
             read DEFINE_REPO_DIR
+            echo -e "repo directory: $DEFINE_REPO_DIR\n"
             break
-        elif [ `echo $DEFINE_REPO_DIR_ANSWER|tr [a-z] [A-Z]` = "Y" ]; then
+            ;;
+        Y|y)
             DEFINE_REPO_DIR=$DEFAULT_REPO_DIR
             echo "repo directory: $DEFINE_REPO_DIR"
             break
-        fi
+            ;;
+        *)
+            echo "Error : please input Y/n"
+            ;;
+        esac
     done
 
     #get rootfs destination directory
-    while ((1)); do
+    while true; do
         echo "The rootfs destination directory: (default: $DEFAULT_ROOTFS_DIR)."
         echo "Is this ok?[Y/n]:"
         read DEFINE_ROOTFS_DIR_ANSWER
-        if [ `echo $DEFINE_ROOTFS_DIR_ANSWER|tr [a-z] [A-Z]` = "N" ]; then
+        if [ ! -n "$DEFINE_ROOTFS_DIR_ANSWER" ];then
+            DEFINE_ROOTFS_DIR_ANSWER="Y"
+        fi
+        case $DEFINE_ROOTFS_DIR_ANSWER in
+        N|n)  
             echo "Please input rootfs destination directory =>"
             read DEFINE_ROOTFS_DIR
+            echo -e "rootfs destination directory: $DEFINE_ROOTFS_DIR\n"
             break
-        elif [ `echo $DEFINE_ROOTFS_DIR_ANSWER|tr [a-z] [A-Z]` = "Y" ]; then
+            ;;
+        Y|y)
             DEFINE_ROOTFS_DIR=$DEFAULT_ROOTFS_DIR
             echo "rootfs destination directory: $DEFINE_ROOTFS_DIR"
             break
-        fi
+            ;;
+        *)
+            echo "Error : please input Y/n"
+            ;;
+        esac
     done
 
     #get SPDX repo directory
-    while ((1)); do
+    while true; do
         echo "The SPDX repo directory: (default: $DEFAULT_SPDX_REPO_DIR)."
         echo "Is this ok?[Y/n]:"
         read DEFINE_SPDX_REPO_DIR_ANSWER
-        if [ `echo $DEFINE_SPDX_REPO_DIR_ANSWER|tr [a-z] [A-Z]` = "N" ]; then
+        if [ ! -n "$DEFINE_SPDX_REPO_DIR_ANSWER" ];then
+            DEFINE_SPDX_REPO_DIR_ANSWER="Y"
+        fi
+        case $DEFINE_SPDX_REPO_DIR_ANSWER in
+        N|n)  
             echo "Please input SPDX repo directory =>"
             read DEFINE_SPDX_REPO_DIR
+            echo -e "SPDX repo directory: $DEFINE_SPDX_REPO_DIR\n"
             break
-        elif [ `echo $DEFINE_SPDX_REPO_DIR_ANSWER|tr [a-z] [A-Z]` = "Y" ]; then
+            ;;
+        Y|y)
             DEFINE_SPDX_REPO_DIR=$DEFAULT_SPDX_REPO_DIR
             echo "SPDX repo directory: $DEFINE_SPDX_REPO_DIR"
             break
-        fi
+            ;;
+        *)
+            echo "Error : please input Y/n"
+            ;;
+        esac
     done
 
     #get SPDX file destination directory
-    while ((1)); do
+    while true; do
         echo "The SPDX file destination directory: (default: $DEFAULT_SPDX_DESTINATION_DIR)."
         echo "Is this ok?[Y/n]:"
         read DEFINE_SPDX_DESTINATION_DIR_ANSWER
-        if [ `echo $DEFINE_SPDX_DESTINATION_DIR_ANSWER|tr [a-z] [A-Z]` = "N" ]; then
+        if [ ! -n "$DEFINE_SPDX_DESTINATION_DIR_ANSWER" ];then
+            DEFINE_SPDX_DESTINATION_DIR_ANSWER="Y"
+        fi
+        case $DEFINE_SPDX_DESTINATION_DIR_ANSWER in
+        N|n)  
             echo "Please input SPDX file destination directory =>"
             read DEFINE_SPDX_DESTINATION_DIR
+            echo -e "SPDX file destination directory: $DEFINE_SPDX_DESTINATION_DIR\n"
             break
-        elif [ `echo $DEFINE_SPDX_DESTINATION_DIR_ANSWER|tr [a-z] [A-Z]` = "Y" ]; then
+            ;;
+        Y|y)
             DEFINE_SPDX_DESTINATION_DIR=$DEFAULT_SPDX_DESTINATION_DIR
             echo "SPDX file destination directory: $DEFINE_SPDX_DESTINATION_DIR"
             break
-        fi
+            ;;
+        *)
+            echo "Error : please input Y/n"
+            ;;
+        esac
     done
 
     if [ ! -d $DEFINE_SPDX_DESTINATION_DIR ];then
@@ -101,36 +141,55 @@ if [ $1 = "init" -a $# = 1 ]; then
     fi
 
     #get SRPM repo directory    
-    while ((1)); do
+    while true; do
         echo "The SRPM repo directory: (default: $DEFAULT_SRPM_REPO_DIR)."
         echo "Is this ok?[Y/n]:"
         read DEFINE_SRPM_REPO_DIR_ANSWER
-        if [ `echo $DEFINE_SRPM_REPO_DIR_ANSWER|tr [a-z] [A-Z]` = "N" ]; then
+        if [ ! -n "$DEFINE_SRPM_REPO_DIR_ANSWER" ];then
+            DEFINE_SRPM_REPO_DIR_ANSWER="Y"
+        fi
+        case $DEFINE_SRPM_REPO_DIR_ANSWER in
+        N|n)  
             echo "Please input SRPM repo directory =>"
             read DEFINE_SRPM_REPO_DIR
+            echo -e "SRPM repo directory: $DEFINE_SRPM_REPO_DIR\n"
             break
-        elif [ `echo $DEFINE_SRPM_REPO_DIR_ANSWER|tr [a-z] [A-Z]` = "Y" ]; then
+            ;;
+        Y|y)
             DEFINE_SRPM_REPO_DIR=$DEFAULT_SRPM_REPO_DIR
             echo "SRPM repo directory: $DEFINE_SRPM_REPO_DIR"
             break
-        fi
+            ;;
+        *)
+            echo "Error : please input Y/n"
+            ;;
+        esac
     done
 
-
     #get SRPM file destination directory
-    while ((1)); do
+    while true; do
         echo "The SRPM file destination directory: (default: $DEFAULT_SRPM_DESTINATION_DIR)."
         echo "Is this ok?[Y/n]:"
         read DEFINE_SRPM_DESTINATION_DIR_ANSWER
-        if [ `echo $DEFINE_SRPM_DESTINATION_DIR_ANSWER|tr [a-z] [A-Z]` = "N" ]; then
+        if [ ! -n "$DEFINE_SRPM_DESTINATION_DIR_ANSWER" ];then
+            DEFINE_SRPM_DESTINATION_DIR_ANSWER="Y"
+        fi
+        case $DEFINE_SRPM_DESTINATION_DIR_ANSWER in
+        N|n)  
             echo "Please input SRPM destination directory =>"
             read DEFINE_SRPM_DESTINATION_DIR
+            echo -e "SRPM file destination directory: $DEFINE_SRPM_DESTINATION_DIR\n"
             break
-        elif [ `echo $DEFINE_SRPM_DESTINATION_DIR_ANSWER|tr [a-z] [A-Z]` = "Y" ]; then
+            ;;
+        Y|y)
             DEFINE_SRPM_DESTINATION_DIR=$DEFAULT_SRPM_DESTINATION_DIR
             echo "SRPM file destination directory: $DEFINE_SRPM_DESTINATION_DIR"
             break
-        fi
+            ;;
+        *)
+            echo "Error : please input Y/n"
+            ;;
+        esac
     done
 
     if [ ! -d $DEFINE_SRPM_DESTINATION_DIR ];then

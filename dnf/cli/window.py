@@ -13,7 +13,7 @@ ACTION_GET_SOURCE = 3
 ACTION_GET_SPDX   = 4
 
 
-Confirm_type_list = [("Exit","\n Do you really terminate it?\n\n"), \
+Confirm_type_list = [("Exit","\n Do you really want to terminate it?\n\n"), \
                      ("Confirm install","\n Do you want to begin installation?\n\n"), \
                      ("License","\n Do you want to display GPLv3 packages?\n\n"), \
                      ("Confirm remove","\n Do you want to begin removing?\n\n"), \
@@ -24,7 +24,7 @@ Confirm_type_list = [("Exit","\n Do you really terminate it?\n\n"), \
 Attention_type_list=[("Attention!","\n You must installed some packages first!\n\n"), \
                      ("Attention!","Have some advanced version packages.\nShow installed only!\n\
 You can enter 'upgrade' scene to upgrade \ninstalled packages.\n"), \
-                     ("Attention!","\n There is no packages to be upgraded!\n\n") \
+                     ("Attention!","\n There is no package to be upgraded!\n\n") \
                      ]
 
 SIGN_SELECT=["*", "-", "U", "S", "S"]

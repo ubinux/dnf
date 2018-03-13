@@ -344,7 +344,7 @@ class TuiCommand(commands.Command):
                 pkgnarrow, patterns, installed_available, reponame)
         except dnf.exceptions.Error as e:
             return 1, [str(e)]
-
+ 
         if pkgTypeList == None:
             pkg_available = copy.copy(ypl.available)
             pkg_installed = copy.copy(ypl.installed)
@@ -485,6 +485,7 @@ class TuiCommand(commands.Command):
                     if pkg not in ypl.installed:
                         if pkg in display_pkgs:
                             display_pkgs.remove(pkg)
+                display_pkgs = sorted(display_pkgs)
 
             if install_type == ACTION_UPGRADE:
                 self.base.upgrade_all()
@@ -494,6 +495,7 @@ class TuiCommand(commands.Command):
                 display_pkgs = []
                 for pkg in install_set:
                     display_pkgs.append(pkg)
+                display_pkgs = sorted(display_pkgs)
 
                 # clean the _transaction
                 self.base.close()

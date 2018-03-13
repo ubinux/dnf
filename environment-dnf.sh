@@ -60,7 +60,7 @@ if [ ${REPODIR:0:4} = "http" ];then
     echo "This is a remote repo!"
 else
     if [ ! -d $REPO_DIR/rpm ]; then
-        echo "Error! $REPO_DIR/rpm is not exist. "
+        echo "Error! $REPO_DIR/rpm is not exist. Please Check your rpm repo! "
         exit 0
     fi
     echo "Creating repo"
