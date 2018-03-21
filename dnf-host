@@ -2,7 +2,7 @@
 
 #DEFAULT_TARGET_ ROOTFS=""
 WORKDIR=`pwd`
-DEFAULT_REPO_DIR=file://$WORKDIR/oe_repo/
+DEFAULT_REPO_DIR=$WORKDIR/oe_repo
 HIDDEN_ROOTFS_DIR=$WORKDIR/.rootfs-${ARCH}
 DEFAULT_ROOTFS_DIR=/opt/ubq/devkit/$ARCH
 DEFAULT_SPDX_REPO_DIR=file://$WORKDIR/spdx_repo
@@ -10,16 +10,66 @@ DEFAULT_SPDX_DESTINATION_DIR=$WORKDIR/spdx_download
 DEFAULT_SRPM_REPO_DIR=file://$WORKDIR/srpm_repo
 DEFAULT_SRPM_DESTINATION_DIR=$WORKDIR/srpm_download
 TAR="false"
-ARGS=$*
-CHECK_TAR=`echo $ARGS | grep "\--rootfs-tar"`
 
-#check the --rootfs-tar arg
-if [ -n "$CHECK_TAR" ]; then
-    TAR="true"
-    ARGS=`echo ${ARGS/--rootfs-tar/}`
-fi
+usage () {
+    if [ ! -f $WORKDIR/.env-dnf ]; then
+        echo "Init the environment failed, please init again"
+        exit 0
+    else
+        source $WORKDIR/.env-dnf
+        echo "dnf-host is only used on host to manage packages for target."
+        echo ""
+        echo "1. If you want to create a new rootfs, you must init your envirment first."
+        echo "   \$ dnf-host init "
+        echo ""
+        echo "2. If you want to manage your rootfs that has already create by dnf-host."
+        echo "   \$ dnf-host [options] COMMAND "
+        echo "   In this case, the usage is as same as dnf:"
+        echo ""
+        echo "======== Advanced OPTIONS ========"
+        echo "  -Y         Automatic yes to all prompts"
+        echo "  -D         use set -x to see what is going on"
+        echo ""
 
-if [ $1 = "init" -a $# = 1 ]; then
+        dnf -y -c ${HIDDEN_ROOTFS}/etc/dnf/dnf-host.conf --setopt=reposdir=${HIDDEN_ROOTFS}/etc/yum.repos.d --installroot=${HIDDEN_ROOTFS} --setopt=logdir=$WORKDIR/ help --releasever=None
+    fi
+    exit
+}
+
+ensure_confirm() {
+   read USER_ANSWER
+   if [ ! -n "$USER_ANSWER" ];then
+       USER_ANSWER="Y"
+   fi
+   case $USER_ANSWER in
+   N|n)
+       ;;
+   Y|y)
+       break
+       ;;
+   *)
+       echo "Init aborted!"
+       exit 1
+       ;;
+   esac
+}
+
+set_dir() {
+        if [ "$answer" = "Y" ]; then
+            USER_DEFINE=$1
+            echo "Set $2 directory to \"${USER_DEFINE#*//}\"."
+        else
+            echo "================================================================="
+            while true; do
+                read -p "Enter $2 directory (default: ${1#*//}): " USER_DEFINE
+                [ "$USER_DEFINE" = "" ] && USER_DEFINE=$1
+                echo "You are about to set $2 directory to \"${USER_DEFINE#*//}\". Are you sure[Y/n]?"
+                ensure_confirm
+            done
+        fi
+}
+
+dnf-init() {
     if [ -f .env-dnf ];then
         rm .env-dnf
     fi
@@ -30,167 +80,45 @@ if [ $1 = "init" -a $# = 1 ]; then
         echo "Deleting temp rootfs......"
         rm -rf $HIDDEN_ROOTFS_DIR
     fi
-
+    
     #get repo directory
-    while true; do
-        echo "The repo directory: (default:$WORKDIR/oe_repo)."
-        echo "Is this ok?[Y/n]:"
-        read DEFINE_REPO_DIR_ANSWER
-        if [ ! -n "$DEFINE_REPO_DIR_ANSWER" ];then
-            DEFINE_REPO_DIR_ANSWER="Y"
-        fi
-        case $DEFINE_REPO_DIR_ANSWER in
-        N|n)  
-            echo "Please input repo directory =>"
-            read DEFINE_REPO_DIR
-            echo -e "repo directory: $DEFINE_REPO_DIR\n"
-            break
-            ;;
-        Y|y)
-            DEFINE_REPO_DIR=$DEFAULT_REPO_DIR
-            echo "repo directory: $DEFINE_REPO_DIR"
-            break
-            ;;
-        *)
-            echo "Error : please input Y/n"
-            ;;
-        esac
-    done
-
+    set_dir $DEFAULT_REPO_DIR "repo"
+    DEFINE_REPO_DIR=$USER_DEFINE
+    
     #get rootfs destination directory
-    while true; do
-        echo "The rootfs destination directory: (default: $DEFAULT_ROOTFS_DIR)."
-        echo "Is this ok?[Y/n]:"
-        read DEFINE_ROOTFS_DIR_ANSWER
-        if [ ! -n "$DEFINE_ROOTFS_DIR_ANSWER" ];then
-            DEFINE_ROOTFS_DIR_ANSWER="Y"
-        fi
-        case $DEFINE_ROOTFS_DIR_ANSWER in
-        N|n)  
-            echo "Please input rootfs destination directory =>"
-            read DEFINE_ROOTFS_DIR
-            echo -e "rootfs destination directory: $DEFINE_ROOTFS_DIR\n"
-            break
-            ;;
-        Y|y)
-            DEFINE_ROOTFS_DIR=$DEFAULT_ROOTFS_DIR
-            echo "rootfs destination directory: $DEFINE_ROOTFS_DIR"
-            break
-            ;;
-        *)
-            echo "Error : please input Y/n"
-            ;;
-        esac
-    done
-
+    set_dir $DEFAULT_ROOTFS_DIR "rootfs destination"
+    DEFINE_ROOTFS_DIR=$USER_DEFINE
+    
     #get SPDX repo directory
-    while true; do
-        echo "The SPDX repo directory: (default: $DEFAULT_SPDX_REPO_DIR)."
-        echo "Is this ok?[Y/n]:"
-        read DEFINE_SPDX_REPO_DIR_ANSWER
-        if [ ! -n "$DEFINE_SPDX_REPO_DIR_ANSWER" ];then
-            DEFINE_SPDX_REPO_DIR_ANSWER="Y"
-        fi
-        case $DEFINE_SPDX_REPO_DIR_ANSWER in
-        N|n)  
-            echo "Please input SPDX repo directory =>"
-            read DEFINE_SPDX_REPO_DIR
-            echo -e "SPDX repo directory: $DEFINE_SPDX_REPO_DIR\n"
-            break
-            ;;
-        Y|y)
-            DEFINE_SPDX_REPO_DIR=$DEFAULT_SPDX_REPO_DIR
-            echo "SPDX repo directory: $DEFINE_SPDX_REPO_DIR"
-            break
-            ;;
-        *)
-            echo "Error : please input Y/n"
-            ;;
-        esac
-    done
+    set_dir $DEFAULT_SPDX_REPO_DIR "SPDX repo"
+    DEFINE_SPDX_REPO_DIR=$USER_DEFINE
+
+    #Add 'file://' for SPDX_REPO_DIR
+    if [ ${DEFINE_SPDX_REPO_DIR:0:4} != "file" ];then
+        DEFINE_SPDX_REPO_DIR=file://${DEFINE_SPDX_REPO_DIR}
+    fi
 
     #get SPDX file destination directory
-    while true; do
-        echo "The SPDX file destination directory: (default: $DEFAULT_SPDX_DESTINATION_DIR)."
-        echo "Is this ok?[Y/n]:"
-        read DEFINE_SPDX_DESTINATION_DIR_ANSWER
-        if [ ! -n "$DEFINE_SPDX_DESTINATION_DIR_ANSWER" ];then
-            DEFINE_SPDX_DESTINATION_DIR_ANSWER="Y"
-        fi
-        case $DEFINE_SPDX_DESTINATION_DIR_ANSWER in
-        N|n)  
-            echo "Please input SPDX file destination directory =>"
-            read DEFINE_SPDX_DESTINATION_DIR
-            echo -e "SPDX file destination directory: $DEFINE_SPDX_DESTINATION_DIR\n"
-            break
-            ;;
-        Y|y)
-            DEFINE_SPDX_DESTINATION_DIR=$DEFAULT_SPDX_DESTINATION_DIR
-            echo "SPDX file destination directory: $DEFINE_SPDX_DESTINATION_DIR"
-            break
-            ;;
-        *)
-            echo "Error : please input Y/n"
-            ;;
-        esac
-    done
+    set_dir $DEFAULT_SPDX_DESTINATION_DIR "SPDX file destination"
+    DEFINE_SPDX_DESTINATION_DIR=$USER_DEFINE
 
     if [ ! -d $DEFINE_SPDX_DESTINATION_DIR ];then
         echo "Create the SPDX file destination directory automatically"
         mkdir -p $DEFINE_SPDX_DESTINATION_DIR
     fi
-
+    
     #get SRPM repo directory    
-    while true; do
-        echo "The SRPM repo directory: (default: $DEFAULT_SRPM_REPO_DIR)."
-        echo "Is this ok?[Y/n]:"
-        read DEFINE_SRPM_REPO_DIR_ANSWER
-        if [ ! -n "$DEFINE_SRPM_REPO_DIR_ANSWER" ];then
-            DEFINE_SRPM_REPO_DIR_ANSWER="Y"
-        fi
-        case $DEFINE_SRPM_REPO_DIR_ANSWER in
-        N|n)  
-            echo "Please input SRPM repo directory =>"
-            read DEFINE_SRPM_REPO_DIR
-            echo -e "SRPM repo directory: $DEFINE_SRPM_REPO_DIR\n"
-            break
-            ;;
-        Y|y)
-            DEFINE_SRPM_REPO_DIR=$DEFAULT_SRPM_REPO_DIR
-            echo "SRPM repo directory: $DEFINE_SRPM_REPO_DIR"
-            break
-            ;;
-        *)
-            echo "Error : please input Y/n"
-            ;;
-        esac
-    done
+    set_dir $DEFAULT_SRPM_REPO_DIR "SRPM repo"
+    DEFINE_SRPM_REPO_DIR=$USER_DEFINE
+
+    #Add 'file://' for SRPM_REPO_DIR
+    if [ ${DEFINE_SRPM_REPO_DIR:0:4} != "file" ];then
+        DEFINE_SRPM_REPO_DIR=file://${DEFINE_SRPM_REPO_DIR}
+    fi
 
     #get SRPM file destination directory
-    while true; do
-        echo "The SRPM file destination directory: (default: $DEFAULT_SRPM_DESTINATION_DIR)."
-        echo "Is this ok?[Y/n]:"
-        read DEFINE_SRPM_DESTINATION_DIR_ANSWER
-        if [ ! -n "$DEFINE_SRPM_DESTINATION_DIR_ANSWER" ];then
-            DEFINE_SRPM_DESTINATION_DIR_ANSWER="Y"
-        fi
-        case $DEFINE_SRPM_DESTINATION_DIR_ANSWER in
-        N|n)  
-            echo "Please input SRPM destination directory =>"
-            read DEFINE_SRPM_DESTINATION_DIR
-            echo -e "SRPM file destination directory: $DEFINE_SRPM_DESTINATION_DIR\n"
-            break
-            ;;
-        Y|y)
-            DEFINE_SRPM_DESTINATION_DIR=$DEFAULT_SRPM_DESTINATION_DIR
-            echo "SRPM file destination directory: $DEFINE_SRPM_DESTINATION_DIR"
-            break
-            ;;
-        *)
-            echo "Error : please input Y/n"
-            ;;
-        esac
-    done
+    set_dir $DEFAULT_SRPM_DESTINATION_DIR "SRPM file destination"
+    DEFINE_SRPM_DESTINATION_DIR=$USER_DEFINE
 
     if [ ! -d $DEFINE_SRPM_DESTINATION_DIR ];then
         echo "Create the SRPM file destination directory automatically"
@@ -202,30 +130,9 @@ if [ $1 = "init" -a $# = 1 ]; then
     fi
 
     environment-dnf.sh $HIDDEN_ROOTFS_DIR $DEFINE_REPO_DIR $DEFINE_SPDX_REPO_DIR $DEFINE_SPDX_DESTINATION_DIR $DEFINE_SRPM_REPO_DIR $DEFINE_SRPM_DESTINATION_DIR $DEFAULT_ROOTFS_DIR
-     
-#elif [ $1 = "init" -a $# != 3 ]; then
-#   echo "Error! The usage of dnf-host init is :"
-#   echo "dnf-host init \${rootfs-dir} \${repo-dir} "
-elif [ $1 = "help" -o $1 = "--help" -o $1 = "-h" -o $1 = "-H" ]; then
-    if [ ! -f $WORKDIR/.env-dnf ]; then
-        echo "Init the environment failed, please init again"
-        exit 0
-    else
-        source $WORKDIR/.env-dnf
-        echo "usage: "
-        echo ""
-        echo "dnf-host is only used on host to manage packages for target."
-        echo ""
-        echo "1. If you want to create a new rootfs."
-        echo "   \$ source dnf-host init \${rootfs-dir} \${repo-dir}"
-        echo ""
-        echo "2. If you want to manage your rootfs that has already create by dnf-host."
-        echo "   \$ dnf-host [options] COMMAND "
-        echo "   In this case, the usage is as same as dnf:"
-        echo ""
-        dnf -y -c ${HIDDEN_ROOTFS}/etc/dnf/dnf-host.conf --setopt=reposdir=${HIDDEN_ROOTFS}/etc/yum.repos.d --installroot=${HIDDEN_ROOTFS} --setopt=logdir=$WORKDIR/ help --releasever=None
-    fi
-elif [ $1 = "show" ]; then
+}
+
+dnf-show() {
     if [ ! -f $WORKDIR/.env-dnf ]; then
         echo "Init the environment failed, please init again"
         exit 0
@@ -238,19 +145,23 @@ elif [ $1 = "show" ]; then
         echo "SRPM repo directory : ${SRPM_REPO_DIR}"
         echo "SRPM destination directory : ${SRPM_DESTINATION_DIR}"
     fi
-else 
+}
+
+dnf-call() {
     if [ ! -f $WORKDIR/.env-dnf ]; then
         echo "Init the environment failed, please init again"
         exit 0
     else
         source $WORKDIR/.env-dnf
-        if [ -f ${HIDDEN_ROOTFS}/var/lib/rpm/Packages -a $1 = "tui" ];then
+        if [ -f ${HIDDEN_ROOTFS}/var/lib/rpm/Packages -a "$1"x = "tui"x ];then
             md5sum -b ${HIDDEN_ROOTFS}/var/lib/rpm/Packages > .md5
         fi
-        if [  $1 = "tui" ]; then
+
+        #Clean metadata for upgrade
+        if [ "$1"x = "tui"x ]; then
             dnf -c ${HIDDEN_ROOTFS}/etc/dnf/dnf-host.conf --setopt=reposdir=${HIDDEN_ROOTFS}/etc/yum.repos.d --repofrompath=oe-repo,${REPO_DIR} --installroot=${HIDDEN_ROOTFS} --setopt=logdir=$WORKDIR/ --nogpgcheck clean metadata -q --releasever=None
         fi
-        dnf -c ${HIDDEN_ROOTFS}/etc/dnf/dnf-host.conf --setopt=reposdir=${HIDDEN_ROOTFS}/etc/yum.repos.d --repofrompath=oe-repo,${REPO_DIR} --installroot=${HIDDEN_ROOTFS} --setopt=logdir=$WORKDIR/ --nogpgcheck $ARGS --releasever=None
+        dnf -c ${HIDDEN_ROOTFS}/etc/dnf/dnf-host.conf --setopt=reposdir=${HIDDEN_ROOTFS}/etc/yum.repos.d --repofrompath=oe-repo,${REPO_DIR} --installroot=${HIDDEN_ROOTFS} --setopt=logdir=$WORKDIR/ --nogpgcheck $* --releasever=None
         Date=`date +%Y%m%d%H%M`
         RELEASE=`echo $STRIP |awk -F '-' '{print $2}'`
         ROOTFS_TAR=rootfs-${RELEASE}-${Date}.tar.bz2
@@ -258,9 +169,11 @@ else
             cd ${HIDDEN_ROOTFS}
             tar -cjf ../rootfs-${Date}.tar.bz2 ./*
         fi
+
+        #When you choose tui, the rootfs will be made only after pkg operation
         if [ -f .md5 ];then
             md5sum -c .md5 --status > /dev/null
-            if [  $? = 1 -a $1 = "tui" ]; then
+            if [ $? = 1 -a "$1"x = "tui"x ]; then
                 cd ${HIDDEN_ROOTFS}
                 echo "Packing the tar file"
                 tar -cjf ../${ROOTFS_TAR} ./*
@@ -271,7 +184,7 @@ else
                 sudo rm ${TARGET_ROOTFS}/rootfs-${RELEASE}-${Date}/etc/dnf/dnf-host.conf
                 rm ../${ROOTFS_TAR}
             fi
-        elif [ -f ${HIDDEN_ROOTFS}/var/lib/rpm/Packages -a $1 = "tui" ];then
+        elif [ -f ${HIDDEN_ROOTFS}/var/lib/rpm/Packages -a "#$1" = "#tui" ];then
             cd ${HIDDEN_ROOTFS}
             echo "Packing the tar file"
             tar -cjf ../${ROOTFS_TAR} ./*
@@ -283,5 +196,50 @@ else
             rm ../${ROOTFS_TAR}
         fi
     fi
+}
+
+#if args is none, show usage
+if [ $# -eq 0 ]; then
+    usage
 fi
 
+ARGS_ORG=$*
+ARGS_ORG=`echo $ARGS_ORG | sed 's/-D//' | sed 's/-Y//'| sed 's/--rootfs-tar//'`
+
+ARGS=`getopt -q -a -o hDY -l help,rootfs-tar -- "$@"`
+
+eval set -- "${ARGS}"
+while true
+do
+        case "$1" in
+        -h|--help)
+                usage
+                shift
+                ;;
+        --rootfs-tar)
+                TAR="true"
+                shift
+                ;;
+        -D)
+                set -x
+                shift
+                ;;
+        -Y)
+                answer="Y"
+                shift
+                ;;
+        --)
+                shift
+                break
+                ;;
+        esac
+done
+
+#Deal residual args 
+if [ "$1"x = "init"x -a $# = 1 ]; then
+    dnf-init
+elif [ "$1"x = "show"x ]; then
+    dnf-show
+else
+    dnf-call $ARGS_ORG
+fi
