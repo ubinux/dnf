@@ -283,8 +283,22 @@ class TuiCommand(commands.Command):
                                 elif hkey == "n":
                                     stage = STAGE_PKG_TYPE
                             #don't want to install GPLv3 that depended by others
-                            else:
+                            elif result == "b":
                                 stage = STAGE_PKG_TYPE
+                            elif result == "n":
+                                if install_type == ACTION_INSTALL:
+                                    confirm_type = CONFIRM_INSTALL
+
+                                hkey = HotkeyExitWindow(screen, confirm_type)
+ 
+                                if hkey == "y":
+                                    if screen != None:
+                                        StopHotkeyScreen(screen)
+                                        screen = None
+                                    if install_type != ACTION_REMOVE:
+                                        self.base.conf.assumeyes = True
+                                    break
+
                         else:
                             if screen != None:
                                 StopHotkeyScreen(screen)
@@ -609,8 +623,8 @@ class TuiCommand(commands.Command):
                     gplv3_pkgs.append(pkg)
         if len(gplv3_pkgs) > 0:
             hkey = ConfirmGplv3Window(screen, gplv3_pkgs)
-            if hkey == "y":
-                return "y"
+            if hkey == "b":
+                return "b"
             elif hkey == "n":
                 return "n"
         else:
