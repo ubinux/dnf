@@ -45,7 +45,7 @@ ensure_confirm() {
    N|n)
        ;;
    Y|y)
-       break
+       return 1
        ;;
    *)
        echo "Init aborted!"
@@ -65,6 +65,9 @@ set_dir() {
                 [ "$USER_DEFINE" = "" ] && USER_DEFINE=$1
                 echo "You are about to set $2 directory to \"${USER_DEFINE#*//}\". Are you sure[Y/n]?"
                 ensure_confirm
+                if [ $? = 1 ]; then
+                    break
+                fi
             done
         fi
 }

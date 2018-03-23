@@ -388,8 +388,6 @@ def HotkeyInfoButtonWindow(insScreen, sTitle, sText, iWidth, iHeight, \
     g.add(t1, 0, 0)
     g.add(t2, 0, 1, (-1, 0, -1, 0))
     g.add(b, 0, 2, (1, 0, 1, -1))
-    for x in dctHotkeys.keys():
-        g.addHotKey(x)
 
     # Display window
     result = g.run()
@@ -399,7 +397,7 @@ def HotkeyInfoButtonWindow(insScreen, sTitle, sText, iWidth, iHeight, \
     
     if b.buttonPressed(result) == "y":
        return 'y'
-    else:
+    elif b.buttonPressed(result) == "n":
        return 'n'
 
 #------------------------------------------------------------
