@@ -283,8 +283,22 @@ class TuiCommand(commands.Command):
                                 elif hkey == "n":
                                     stage = STAGE_PKG_TYPE
                             #don't want to install GPLv3 that depended by others
-                            else:
+                            elif result == "b":
                                 stage = STAGE_PKG_TYPE
+                            elif result == "n":
+                                if install_type == ACTION_INSTALL:
+                                    confirm_type = CONFIRM_INSTALL
+
+                                hkey = HotkeyExitWindow(screen, confirm_type)
+ 
+                                if hkey == "y":
+                                    if screen != None:
+                                        StopHotkeyScreen(screen)
+                                        screen = None
+                                    if install_type != ACTION_REMOVE:
+                                        self.base.conf.assumeyes = True
+                                    break
+
                         else:
                             if screen != None:
                                 StopHotkeyScreen(screen)
@@ -344,7 +358,7 @@ class TuiCommand(commands.Command):
                 pkgnarrow, patterns, installed_available, reponame)
         except dnf.exceptions.Error as e:
             return 1, [str(e)]
-
+ 
         if pkgTypeList == None:
             pkg_available = copy.copy(ypl.available)
             pkg_installed = copy.copy(ypl.installed)
@@ -485,6 +499,7 @@ class TuiCommand(commands.Command):
                     if pkg not in ypl.installed:
                         if pkg in display_pkgs:
                             display_pkgs.remove(pkg)
+                display_pkgs = sorted(display_pkgs)
 
             if install_type == ACTION_UPGRADE:
                 self.base.upgrade_all()
@@ -494,11 +509,11 @@ class TuiCommand(commands.Command):
                 display_pkgs = []
                 for pkg in install_set:
                     display_pkgs.append(pkg)
+                display_pkgs = sorted(display_pkgs)
 
                 # clean the _transaction
                 self.base.close()
                 self.base._transaction = None
-                self.base.fill_sack()
 
         if len(display_pkgs)==0:
             if install_type==ACTION_INSTALL:
@@ -608,8 +623,8 @@ class TuiCommand(commands.Command):
                     gplv3_pkgs.append(pkg)
         if len(gplv3_pkgs) > 0:
             hkey = ConfirmGplv3Window(screen, gplv3_pkgs)
-            if hkey == "y":
-                return "y"
+            if hkey == "b":
+                return "b"
             elif hkey == "n":
                 return "n"
         else:

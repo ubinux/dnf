@@ -13,7 +13,7 @@ ACTION_GET_SOURCE = 3
 ACTION_GET_SPDX   = 4
 
 
-Confirm_type_list = [("Exit","\n Do you really terminate it?\n\n"), \
+Confirm_type_list = [("Exit","\n Do you really want to terminate it?\n\n"), \
                      ("Confirm install","\n Do you want to begin installation?\n\n"), \
                      ("License","\n Do you want to display GPLv3 packages?\n\n"), \
                      ("Confirm remove","\n Do you want to begin removing?\n\n"), \
@@ -24,7 +24,7 @@ Confirm_type_list = [("Exit","\n Do you really terminate it?\n\n"), \
 Attention_type_list=[("Attention!","\n You must installed some packages first!\n\n"), \
                      ("Attention!","Have some advanced version packages.\nShow installed only!\n\
 You can enter 'upgrade' scene to upgrade \ninstalled packages.\n"), \
-                     ("Attention!","\n There is no packages to be upgrdaed!\n\n") \
+                     ("Attention!","\n There is no package to be upgraded!\n\n") \
                      ]
 
 SIGN_SELECT=["*", "-", "U", "S", "S"]
@@ -237,7 +237,7 @@ def HotkeyExitWindow(insScreen, confirm_type=0):
                  "N" : "n", \
                  "n" : "n"}
     
-    result = HotkeyInfoWindow(insScreen, Confirm_type_list[confirm_type][0], \
+    result = HotkeyInfoButtonWindow(insScreen, Confirm_type_list[confirm_type][0], \
                  Confirm_type_list[confirm_type][1], \
                  40, 4, myhotkeys, "Y:yes  N:no")
 
@@ -342,6 +342,63 @@ def HotkeyInfoWindow(insScreen, sTitle, sText, iWidth, iHeight, \
     # Return
     insScreen.popWindow()
     return dctHotkeys[result]
+
+#------------------------------------------------------------
+# def HotkeyInfoButtonWindow()
+#
+#   Display information window for Hotkey mode.
+#
+# Input:
+#   insScreen             : screen instance
+#   sTitle                : title string
+#   sText                 : main text
+#   iWidth                : width of main text
+#   iHeight               : height of main text
+#   dctHotkeys{str : srr} : Hotkey dictionary
+#                           [hotkey string, rtncode]
+#   sHtext                : Hotkey information text
+# Output:
+#   str : rtncode in Hotkey dictionary
+#------------------------------------------------------------
+def HotkeyInfoButtonWindow(insScreen, sTitle, sText, iWidth, iHeight, \
+                     dctHotkeys, sHtext):
+
+    # Get line number
+    length = len(sText)
+    index = 0
+    count = 0
+    scroll = 0
+    while index < length:
+        if sText[index] == "\n":
+            count += 1
+            if count > iHeight:
+                scroll = 1
+                break
+        index += 1
+
+    # Create Text instance
+    t1 = snack.Textbox(iWidth - scroll * 2, iHeight, sText, scroll)
+    t2 = snack.Textbox(iWidth, 1, "-" * iWidth)
+    t3 = snack.Textbox(iWidth, 1, sHtext)
+
+    b = snack.ButtonBar(insScreen,((" Yes ", "y"), (" No ", "n")))
+
+    # Create Grid instance
+    g = snack.GridForm(insScreen, sTitle, 1, 4)
+    g.add(t1, 0, 0)
+    g.add(t2, 0, 1, (-1, 0, -1, 0))
+    g.add(b, 0, 2, (1, 0, 1, -1))
+
+    # Display window
+    result = g.run()
+
+    # Return
+    insScreen.popWindow()
+    
+    if b.buttonPressed(result) == "y":
+       return 'y'
+    elif b.buttonPressed(result) == "n":
+       return 'n'
 
 #------------------------------------------------------------
 # def PKGINSTTypeInfoWindow()
@@ -1263,7 +1320,7 @@ def ConfirmGplv3Window(insScreen, packages):
     else:
         scroll = 0
 
-    hotkey_base_text = "These GPLv3 packages are depended, do you want to install them? (y/n)"
+    hotkey_base_text = "These GPLv3 packages are depended  N:Next  B:Back  X:eXit"
     wrapper = textwrap.TextWrapper(width = main_width)
     hotkey_text = wrapper.fill(hotkey_base_text)
     if hotkey_text != hotkey_base_text:
@@ -1296,16 +1353,28 @@ def ConfirmGplv3Window(insScreen, packages):
     g.add(t4, 0, 4, (0, 0, 0, -1))
 
 ############# append test key 'S' ####
-    myhotkeys = {"y"     : "y", \
-                 "Y"     : "y", \
-                 "n"     : "n", \
-                 "N"     : "n"}
+    myhotkeys = {"n"     : "n", \
+                 "N"     : "n", \
+                 "b"     : "b", \
+                 "B"     : "b", \
+                 "x"     : "x", \
+                 "X"     : "x"}
     for x in myhotkeys.keys():
         g.addHotKey(x)
 #####################################
     result = g.run()
     if result in myhotkeys:
-        if myhotkeys[result] == "y" or \
-            myhotkeys[result] == "n":
+        if myhotkeys[result] == "b" or myhotkeys[result] == "n":
             insScreen.popWindow()
             return (myhotkeys[result])
+
+        elif myhotkeys[result] == "x":
+            # exit
+            insScreen.popWindow()
+            exit_hkey = HotkeyExitWindow(insScreen)
+            if exit_hkey == "y":
+                if insScreen != None:
+                    StopHotkeyScreen(insScreen)
+                    insScreen = None
+                    sys.exit(0)
+
