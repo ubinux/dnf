@@ -112,7 +112,7 @@ After init, then, you can manage packages by TUI or command line.
   Dnf TUI(textual user interface) Function is developed for dnf-host. With TUI, it is easy to customize rootfs of target.
   <br/>Note
   <br/>&emsp;Please make sure your screen is at least 24 lines and 80 columns.
-  <br/>&emsp;In "Confirm" interface and "License" interface, you can use "←" or "→" to chose "YES" or "NO", and use "Enter" to confirm.
+  <br/>&emsp;In "Confirm" interface and "License" interface, you can use "←" or "→" to chose "Yes" or "No", and use "Enter" to confirm.
 
   By the following command you can enter the main interface of TUI.
 
@@ -272,7 +272,7 @@ After init, then, you can manage packages by TUI or command line.
 
 ```
 #### (6) Upgrade
-&emsp;&emsp;You can choose the package that you want to upgrade after enter "upgrade" in main interface.
+&emsp;&emsp;You can choose the package that you want to upgrade after enter "Upgrade" in main interface.
 ```
         ┌────────────────────────────┤ Select package ├────────────────────────────┐
         │                                                                          │
@@ -367,7 +367,7 @@ manage srpm or spdx when you run "dnf-host install" by add the following option:
 manage srpm or spdx only
 
 If you want to manage srpm or spdx files without installation, you can use the subcommand as following:
-  (1) fetchsrpm
+<br>(1) fetchsrpm
 ```
       $ dnf-host fetchsrpm bash
       ......
