@@ -45,11 +45,19 @@ Install_actions = [("Install", "Choose it to install packages."), \
                    ("Create spdx archive", "Choose it to Create SPDX archive") \
                   ]
 
+Custom_actions = [("New", "Install without config file."), \
+                  ("Saved file", "Install with last config file"),  \
+                  ("Samples", "Samples for package list")
+                  ]
+
 ACTION_INSTALL     = 0
 ACTION_REMOVE      = 1
 ACTION_UPGRADE     = 2
 ACTION_GET_SOURCE  = 3
 ACTION_GET_SPDX    = 4
+NEW_INSTALL        = 5
+RECORD_INSTALL     = 6
+SAMPLE_INSTALL     = 7
 
 CONFIRM_EXIT       = 0
 CONFIRM_INSTALL    = 1
@@ -63,6 +71,8 @@ ATTENTON_NONE           = 0
 ATTENTON_HAVE_UPGRADE   = 1
 ATTENTON_NONE_UPGRADE   = 2
 
+SAMPLE = "./samples"
+
 logger = logging.getLogger('dnf')
 
 class TuiCommand(commands.Command):
@@ -72,6 +82,19 @@ class TuiCommand(commands.Command):
 
     aliases = ('tui',)
     summary = _('Enter tui interface.')
+
+    def __init__(self, cli=None):
+        cli = cli or dnf.cli.Cli()
+        super(TuiCommand, self).__init__(cli=cli)
+        self.screen = None
+        self.no_gpl3 = False
+        self.install_type = ACTION_INSTALL
+
+        self.pkgnarrow = 'all'
+        self.patterns = None
+        self.installed_available = False
+        self.reponame = None
+        self.CONFIG_FILE = ".config"
 
     def configure(self):
         self.cli.demands = dnf.cli.commands.shell.ShellDemandSheet()
@@ -95,35 +118,77 @@ class TuiCommand(commands.Command):
         except:
             pass
 
+    def GET_SOURCE_or_SPDX(self, selected_pkgs):
+        if self.screen != None:
+            StopHotkeyScreen(self.screen)
+            self.screen = None
+        if self.install_type == ACTION_GET_SOURCE:
+            srcdir_path = self.base.conf.srpm_repodir
+            destdir_path = self.base.conf.srpm_download
+            dnf.cli.utils.fetchSPDXorSRPM('srpm', selected_pkgs, srcdir_path, destdir_path)
+        elif self.install_type == ACTION_GET_SPDX:
+            srcdir_path = self.base.conf.spdx_repodir
+            destdir_path = self.base.conf.spdx_download
+            dnf.cli.utils.fetchSPDXorSRPM('spdx', selected_pkgs, srcdir_path, destdir_path)
+
+    def Read_ConfigFile(self, display_pkgs, selected_pkgs):
+        f = open(self.CONFIG_FILE, "r")
+        get_text = f.read()
+        config_list = get_text.split('\n')
+
+        for pkg in display_pkgs:
+            if pkg.name in config_list:
+                selected_pkgs.append(pkg)
+        selected_pkgs = list(set(selected_pkgs))
+        f.close()
+        return selected_pkgs
+
+    def Save_ConfigFile(self, selected_pkgs):
+        save_list = []
+        for pkg in selected_pkgs:
+            save_list.append(pkg.name)
+
+        f = open(".config", "w")
+        for line in save_list:
+            f.write(line + '\n')
+        f.close()
+
+    def Read_Samples(self):
+        sample_list = []
+        if os.path.isdir(SAMPLE):
+            for (root, dirs, filenames) in os.walk(SAMPLE):
+                for filename in filenames:
+                    sample = (filename, filename + " Package list")
+                    sample_list.append(sample)
+            return (True, sample_list)
+        else:
+            return (False, "There is no sample files")
+
     def PKGINSTDispMain(self):
         STAGE_INSTALL_TYPE = 1
-        STAGE_PKG_TYPE     = 2
-        STAGE_CUST_LIC     = 3
-        STAGE_PACKAGE      = 4
-        STAGE_PACKAGE_SPEC = 5
-        STAGE_PROCESS      = 6
-        
-        screen = None
-        no_gpl3 = False
-        
-        pkgnarrow = 'all'
-        patterns = None
-        installed_available = False
-        reponame = None
+        STAGE_CUSTOM_TYPE = 2
+        STAGE_RECORD_INSTALL = 3
+        STAGE_SAMPLE_INSTALL = 4
+        STAGE_PKG_TYPE = 5
+        STAGE_CUST_LIC = 6
+        STAGE_PACKAGE = 7
+        STAGE_PACKAGE_SPEC = 8
+        STAGE_PROCESS = 9
+
+        custom_type = NEW_INSTALL
         #----dnf part-------
         try:
             ypl = self.base.returnPkgLists(
-                pkgnarrow, patterns, installed_available, reponame)
+                self.pkgnarrow, self.patterns, self.installed_available, self.reponame)
         except dnf.exceptions.Error as e:
             return 1, [str(e)]
         else:
             if len(ypl.available + ypl.installed) < 1:
                 print ("Error! No packages!")
                 sys.exit(0)
-            screen = StartHotkeyScreen(_TXT_ROOT_TITLE)
-            if screen == None:
+            self.screen = StartHotkeyScreen(_TXT_ROOT_TITLE)
+            if self.screen == None:
                 sys.exit(1)
-            install_type = ACTION_INSTALL
             stage = STAGE_INSTALL_TYPE
  
             def __init_pkg_type():
@@ -148,18 +213,16 @@ class TuiCommand(commands.Command):
             selected_pkgs = []
             selected_pkgs_spec = []
             pkgs_spec = []
-            src_path=""
-            output_path=""
+
             while True:
                 #==============================
                 # select install type
                 #==============================
                 if stage == STAGE_INSTALL_TYPE:
- 
-                    install_type = PKGINSTActionWindowCtrl(screen, Install_actions, install_type)
+                    self.install_type = PKGINSTActionWindowCtrl(self.screen, Install_actions, self.install_type)
 
-                    if install_type == ACTION_GET_SOURCE or install_type == ACTION_GET_SPDX:
-                        stage = STAGE_PACKAGE
+                    if self.install_type == ACTION_INSTALL:
+                        stage = STAGE_CUSTOM_TYPE
                         continue
                     else:
                         stage = STAGE_PACKAGE
@@ -168,37 +231,112 @@ class TuiCommand(commands.Command):
                     selected_pkgs_spec = []
                     pkgs_spec = []
 
-                    if install_type == ACTION_INSTALL:
-                        result = HotkeyExitWindow(screen, confirm_type=CONFIRM_LICENSE)
-                        if result == "y":
-                            no_gpl3 = False
-                        else:
-                            no_gpl3 = True
-                    else:
-                        no_gpl3 = False
+                # ==============================
+                # custom type
+                # ==============================
+                elif stage == STAGE_CUSTOM_TYPE:
+                    (result, custom_type) = PKGCUSActionWindowCtrl(self.screen, Custom_actions, self.install_type)
 
+                    if result == "b":
+                        # back
+                        stage = STAGE_INSTALL_TYPE
+                        continue
+
+                    custom_type = custom_type + 5
+                    if custom_type == NEW_INSTALL:
+                        stage = STAGE_PACKAGE
+                        result = HotkeyExitWindow(self.screen, confirm_type=CONFIRM_LICENSE)
+                        if result == "y":
+                            self.no_gpl3 = False
+                        else:
+                            self.no_gpl3 = True
+                    elif custom_type == RECORD_INSTALL:
+                        stage = STAGE_RECORD_INSTALL
+                        self.no_gpl3 = False
+                    elif custom_type == SAMPLE_INSTALL:
+                        stage = STAGE_SAMPLE_INSTALL
+                        self.no_gpl3 = False
+
+                # ==============================
+                # record install
+                # ==============================
+                elif stage == STAGE_RECORD_INSTALL:
+
+                    (result, self.CONFIG_FILE) = PKGINSTPathInputWindow(self.screen, \
+                                                      True, \
+                                                      "  Config File  ", \
+                                                      "Enter the name of configuration file you wish to load:", \
+                                                      self.CONFIG_FILE )
+
+                    if result == "cancel":
+                        # back
+                        stage = STAGE_CUSTOM_TYPE
+                        continue
+
+                    (result, selected_pkgs, pkgs_spec) = self.PKGINSTWindowCtrl(None, \
+                                                                                None, selected_pkgs, custom_type)
+                    if result == "b":
+                        # back
+                        stage = STAGE_CUSTOM_TYPE
+
+                    elif result == "n":
+                        #next
+                        stage = STAGE_PKG_TYPE
+
+
+                # ==============================
+                # sample install
+                # ==============================
+                elif stage == STAGE_SAMPLE_INSTALL:
+                    (Flag, sample_list) = self.Read_Samples()
+                    if Flag == True:
+                        (result, sample_type) = PKGCUSActionWindowCtrl(self.screen, sample_list, self.install_type)
+
+                        if result == "b":
+                            # back
+                            stage = STAGE_CUSTOM_TYPE
+                            continue
+                        
+                        else:
+                            config_file = SAMPLE + '/' + sample_list[sample_type][0]
+                            try:
+                                f = open(config_file, "r")
+                            except Exception as e:
+                                logger.error(_("%s."), e)
+                            get_text = f.read()
+                            config_list = get_text.split('\n')
+                            pkg_str = ' '.join(config_list)
+                            stage = STAGE_PROCESS
+
+                    else:
+                        SampleMissWindow(self.screen, sample_list)
+                        stage = STAGE_CUSTOM_TYPE
 
                 #==============================
                 # select package
                 #==============================
                 elif stage == STAGE_PACKAGE:
-                    (result, selected_pkgs, pkgs_spec) = self.PKGINSTWindowCtrl(screen, install_type, None, no_gpl3, \
-                                                                                None, selected_pkgs)
+                    (result, selected_pkgs, pkgs_spec) = self.PKGINSTWindowCtrl(None, \
+                                                                                None, selected_pkgs, custom_type)
                     if result == "b":
                         # back
-                        stage = STAGE_INSTALL_TYPE
+                        if self.install_type == ACTION_INSTALL:
+                            stage = STAGE_CUSTOM_TYPE
+                        else:
+                            stage = STAGE_INSTALL_TYPE
+                            self.no_gpl3 = False
 
                     elif result == "n":
-                        if install_type == ACTION_INSTALL:
+                        if self.install_type == ACTION_INSTALL:
                             stage = STAGE_PKG_TYPE
                         else:
                             #confirm if or not continue process function
-                            if   install_type == ACTION_REMOVE     : confirm_type = CONFIRM_REMOVE
-                            elif install_type == ACTION_UPGRADE    : confirm_type = CONFIRM_UPGRADE
-                            elif install_type == ACTION_GET_SOURCE : confirm_type = CONFIRM_GET_SOURCE
-                            elif install_type == ACTION_GET_SPDX   : confirm_type = CONFIRM_GET_SPDX
+                            if   self.install_type == ACTION_REMOVE     : confirm_type = CONFIRM_REMOVE
+                            elif self.install_type == ACTION_UPGRADE    : confirm_type = CONFIRM_UPGRADE
+                            elif self.install_type == ACTION_GET_SOURCE : confirm_type = CONFIRM_GET_SOURCE
+                            elif self.install_type == ACTION_GET_SPDX   : confirm_type = CONFIRM_GET_SPDX
 
-                            hkey = HotkeyExitWindow(screen, confirm_type)
+                            hkey = HotkeyExitWindow(self.screen, confirm_type)
                             if hkey == "y":
                                 stage = STAGE_PROCESS
                             elif hkey == "n":
@@ -208,18 +346,19 @@ class TuiCommand(commands.Command):
                 # select package type
                 #==============================
                 elif stage == STAGE_PKG_TYPE:
-                    (result, pkgTypeList) = PKGTypeSelectWindowCtrl(screen, pkgTypeList)
+                    (result, pkgTypeList) = PKGTypeSelectWindowCtrl(self.screen, pkgTypeList)
                     if result == "b":
                         # back
                         stage = STAGE_PACKAGE
                     elif result == "n":
                         stage = STAGE_PACKAGE_SPEC
+
                 #==============================
                 # select special packages(local, dev, dbg, doc) 
                 #==============================
                 elif stage == STAGE_PACKAGE_SPEC:
-                    (result, selected_pkgs_spec, pkgs_temp) = self.PKGINSTWindowCtrl(screen, install_type, pkgTypeList, \
-                                                                                no_gpl3, pkgs_spec, selected_pkgs_spec)
+                    (result, selected_pkgs_spec, pkgs_temp) = self.PKGINSTWindowCtrl(pkgTypeList, \
+                                                                                pkgs_spec, selected_pkgs_spec)
                     if result == "b":
                         # back
                         stage = STAGE_PKG_TYPE
@@ -232,52 +371,53 @@ class TuiCommand(commands.Command):
                 # Process function
                 # ==============================
                 elif stage == STAGE_PROCESS:
-                    if install_type == ACTION_GET_SOURCE or install_type == ACTION_GET_SPDX:
-                        if screen != None:
-                            StopHotkeyScreen(screen)
-                            screen = None
-                        if install_type == ACTION_GET_SOURCE:
-                            srcdir_path = self.base.conf.srpm_repodir
-                            destdir_path = self.base.conf.srpm_download
-                            dnf.cli.utils.fetchSPDXorSRPM('srpm', selected_pkgs, srcdir_path, destdir_path)
-                        elif install_type == ACTION_GET_SPDX:
-                            srcdir_path = self.base.conf.spdx_repodir
-                            destdir_path = self.base.conf.spdx_download
-                            dnf.cli.utils.fetchSPDXorSRPM('spdx', selected_pkgs, srcdir_path, destdir_path)
+                    if self.install_type == ACTION_GET_SOURCE or self.install_type == ACTION_GET_SPDX:
+                        self.GET_SOURCE_or_SPDX(selected_pkgs)
                         break
                     else:
-                        for pkg in selected_pkgs:           #selected_pkgs
-                            if install_type == ACTION_INSTALL:
-                                s_line = ["install", pkg.name]
-                            elif install_type == ACTION_REMOVE:
-                                s_line = ["remove", pkg.name]
-                            elif install_type == ACTION_UPGRADE:
-                                s_line = ["upgrade", pkg.name]
+                        if custom_type == SAMPLE_INSTALL:
+                            s_line = ["install", pkg_str]
                             self.run_dnf_command(s_line)
+                            hkey = HotkeyExitWindow(self.screen, CONFIRM_INSTALL)
+                            if hkey == "n":
+                                stage = STAGE_SAMPLE_INSTALL
+                                continue
+                                
+                        else:
+                            for pkg in selected_pkgs:           #selected_pkgs
+                                if self.install_type == ACTION_INSTALL:
+                                    s_line = ["install", pkg.name]
+                                elif self.install_type == ACTION_REMOVE:
+                                    s_line = ["remove", pkg.name]
+                                elif self.install_type == ACTION_UPGRADE:
+                                    s_line = ["upgrade", pkg.name]
+                                self.run_dnf_command(s_line)
 
-                        if install_type == ACTION_INSTALL:  #selected_pkgs_spec
+                        if self.install_type == ACTION_INSTALL:  #selected_pkgs_spec
+                            if custom_type != SAMPLE_INSTALL:
+                                self.Save_ConfigFile(selected_pkgs)
                             for pkg in selected_pkgs_spec:
                                 s_line = ["install", pkg.name]
                                 self.run_dnf_command(s_line)
 
-                        if no_gpl3:
+                        if self.no_gpl3:
                             #obtain the transaction
                             self.base.resolve(self.cli.demands.allow_erasing)
                             install_set = self.base.transaction.install_set
 
-                            result = self.showChangeSet(screen, install_set)
+                            result = self.showChangeSet(install_set)
                             #continue to install
                             if result == "y":
-                                if install_type == ACTION_INSTALL:
+                                if self.install_type == ACTION_INSTALL:
                                     confirm_type = CONFIRM_INSTALL
 
-                                hkey = HotkeyExitWindow(screen, confirm_type)
+                                hkey = HotkeyExitWindow(self.screen, confirm_type)
  
                                 if hkey == "y":
-                                    if screen != None:
-                                        StopHotkeyScreen(screen)
-                                        screen = None
-                                    if install_type != ACTION_REMOVE:
+                                    if self.screen != None:
+                                        StopHotkeyScreen(self.screen)
+                                        self.screen = None
+                                    if self.install_type != ACTION_REMOVE:
                                         self.base.conf.assumeyes = True
                                     break
                                 elif hkey == "n":
@@ -286,30 +426,30 @@ class TuiCommand(commands.Command):
                             elif result == "b":
                                 stage = STAGE_PKG_TYPE
                             elif result == "n":
-                                if install_type == ACTION_INSTALL:
+                                if self.install_type == ACTION_INSTALL:
                                     confirm_type = CONFIRM_INSTALL
 
-                                hkey = HotkeyExitWindow(screen, confirm_type)
+                                hkey = HotkeyExitWindow(self.screen, confirm_type)
  
                                 if hkey == "y":
-                                    if screen != None:
-                                        StopHotkeyScreen(screen)
-                                        screen = None
-                                    if install_type != ACTION_REMOVE:
+                                    if self.screen != None:
+                                        StopHotkeyScreen(self.screen)
+                                        self.screen = None
+                                    if self.install_type != ACTION_REMOVE:
                                         self.base.conf.assumeyes = True
                                     break
 
                         else:
-                            if screen != None:
-                                StopHotkeyScreen(screen)
-                                screen = None
-                                if install_type != ACTION_REMOVE:
+                            if self.screen != None:
+                                StopHotkeyScreen(self.screen)
+                                self.screen = None
+                                if self.install_type != ACTION_REMOVE:
                                     self.base.conf.assumeyes = True
                             break
 
-            if screen != None:
-                StopHotkeyScreen(screen)
-                screen = None
+            if self.screen != None:
+                StopHotkeyScreen(self.screen)
+                self.screen = None
 
     def _DeleteUpgrade(self,packages=None,display_pkgs=[]):
         haveUpgrade=False
@@ -328,7 +468,7 @@ class TuiCommand(commands.Command):
                     display_pkgs.remove(pkg)
         return haveUpgrade
 
-    def PKGINSTWindowCtrl(self, screen, install_type, pkgTypeList, no_gpl3, packages=None, selected_pkgs=[]):
+    def PKGINSTWindowCtrl(self, pkgTypeList, packages=None, selected_pkgs=[],custom_type=0):
         STAGE_SELECT = 1
         STAGE_PKG_TYPE = 2
         STAGE_BACK   = 3
@@ -348,14 +488,15 @@ class TuiCommand(commands.Command):
         stage = STAGE_SELECT
         search = None
 
-        pkgnarrow = 'all'
-        patterns = None
-        installed_available = False
-        reponame = None
-
+        hotkey_switch = {"n": STAGE_NEXT, \
+                     "b": STAGE_BACK, \
+                     "i": STAGE_INFO, \
+                     "x": STAGE_EXIT, \
+                     "r": STAGE_SEARCH}
+ 
         try:
             ypl = self.base.returnPkgLists(
-                pkgnarrow, patterns, installed_available, reponame)
+                self.pkgnarrow, self.patterns, self.installed_available, self.reponame)
         except dnf.exceptions.Error as e:
             return 1, [str(e)]
  
@@ -373,7 +514,7 @@ class TuiCommand(commands.Command):
             display_pkgs = pkg_installed + pkg_available
             #display_pkgs = copy.copy(packages)
 
-        if no_gpl3:
+        if self.no_gpl3:
             for pkg in (ypl.installed + ypl.available):
                 license = pkg.license
                 if license:
@@ -382,92 +523,74 @@ class TuiCommand(commands.Command):
             packages = copy.copy(display_pkgs) #backup all pkgs
 
         if pkgTypeList != None:
-            for pkyType in pkgTypeList:
-                if pkyType.name == "locale":
-                    if not pkyType.status:
-                        pkyType_locale = False
-                    else:
-                        pkyType_locale = True
-                elif pkyType.name == "dev":
-                    if not pkyType.status:
-                        pkyType_dev = False
-                    else:
-                        pkyType_dev = True
-                elif pkyType.name == "doc":
-                    if not pkyType.status:
-                        pkyType_doc = False
-                    else:
-                        pkyType_doc = True
-                elif pkyType.name == "dbg":
-                    if not pkyType.status:
-                        pkyType_dbg = False
-                    else:
-                        pkyType_dbg = True
-                elif pkyType.name == "staticdev":
-                    if not pkyType.status:
-                        pkyType_staticdev = False
-                    else:
-                        pkyType_staticdev = True
-                elif pkyType.name == "ptest":
-                    if not pkyType.status:
-                        pkyType_ptest = False
-                    else:
-                        pkyType_ptest = True
+            for pkgType in pkgTypeList:
+                if pkgType.name == "locale":
+                    pkgType_locale = pkgType.status
+                elif pkgType.name == "dev":
+                    pkgType_dev = pkgType.status
+                elif pkgType.name == "doc":
+                    pkgType_doc = pkgType.status
+                elif pkgType.name == "dbg":
+                    pkgType_dbg = pkgType.status
+                elif pkgType.name == "staticdev":
+                    pkgType_staticdev = pkgType.status
+                elif pkgType.name == "ptest":
+                    pkgType_ptest = pkgType.status
 
-            if pkyType_locale or pkyType_dev or pkyType_doc or pkyType_dbg or pkyType_staticdev or pkyType_ptest:
+            if pkgType_locale or pkgType_dev or pkgType_doc or pkgType_dbg or pkgType_staticdev or pkgType_ptest:
                 #Don't show doc and dbg packages
                 for pkg in packages:
                     if "-locale-" in pkg.name:
-                        if not pkyType_locale:
+                        if not pkgType_locale:
                             display_pkgs.remove(pkg)
                     elif "-localedata-" in pkg.name:
-                        if not pkyType_locale:
+                        if not pkgType_locale:
                             display_pkgs.remove(pkg)
                     elif pkg.name.endswith('-dev'):
-                        if not pkyType_dev:
+                        if not pkgType_dev:
                             display_pkgs.remove(pkg)
                     elif pkg.name.endswith('-doc'):
-                        if not pkyType_doc:
+                        if not pkgType_doc:
                             display_pkgs.remove(pkg)
                     elif pkg.name.endswith('-dbg'):
-                        if not pkyType_dbg:
+                        if not pkgType_dbg:
                             display_pkgs.remove(pkg)
                     elif pkg.name.endswith('-staticdev'):
-                        if not pkyType_staticdev:
+                        if not pkgType_staticdev:
                             display_pkgs.remove(pkg)
                     elif pkg.name.endswith('-ptest'):
-                        if not pkyType_ptest:
+                        if not pkgType_ptest:
                             display_pkgs.remove(pkg)
             else:
                 display_pkgs = []
 
-            if (install_type==ACTION_REMOVE) or (install_type==ACTION_UPGRADE) or (install_type==ACTION_GET_SOURCE) \
-                                                                               or (install_type==ACTION_GET_SPDX) :
+            if (self.install_type==ACTION_REMOVE) or (self.install_type==ACTION_UPGRADE) or (self.install_type==ACTION_GET_SOURCE) \
+                                                                               or (self.install_type==ACTION_GET_SPDX) :
                 for pkg in packages:
                     if pkg not in ypl.installed:
                         if pkg in display_pkgs:
                             display_pkgs.remove(pkg)
 
-            elif install_type == ACTION_INSTALL:
+            elif self.install_type == ACTION_INSTALL:
                 if(self._DeleteUpgrade(packages,display_pkgs)):
-                    hkey = HotkeyAttentionWindow(screen, ATTENTON_HAVE_UPGRADE)
+                    hkey = HotkeyAttentionWindow(self.screen, ATTENTON_HAVE_UPGRADE)
 
             if len(display_pkgs) == 0:
-                if not no_gpl3:
-                    if install_type == ACTION_INSTALL     :
+                if not self.no_gpl3:
+                    if self.install_type == ACTION_INSTALL     :
                         confirm_type = CONFIRM_INSTALL
-                        hkey = HotkeyExitWindow(screen, confirm_type)
+                        hkey = HotkeyExitWindow(self.screen, confirm_type)
                         if hkey == "y":
                             return ("n", selected_pkgs, packages)
                         elif hkey == "n":
                             return ("k", selected_pkgs, packages)
                     else:
-                        hkey=HotkeyAttentionWindow(screen,ATTENTON_NONE)
+                        hkey=HotkeyAttentionWindow(self.screen,ATTENTON_NONE)
                         return ("b", selected_pkgs, packages)
                 else:
                     return ("n", selected_pkgs, packages)
         else:
-            if install_type == ACTION_INSTALL :
+            if self.install_type == ACTION_INSTALL:
                 for pkg in packages:
                     if "-locale-" in pkg.name:
                         display_pkgs.remove(pkg)
@@ -492,7 +615,7 @@ class TuiCommand(commands.Command):
                         pkgs_spec.append(pkg)
 
                 if(self._DeleteUpgrade(packages,display_pkgs)):
-                    hkey = HotkeyAttentionWindow(screen, ATTENTON_HAVE_UPGRADE)
+                    hkey = HotkeyAttentionWindow(self.screen, ATTENTON_HAVE_UPGRADE)
 
             else:
                 for pkg in packages:
@@ -501,7 +624,7 @@ class TuiCommand(commands.Command):
                             display_pkgs.remove(pkg)
                 display_pkgs = sorted(display_pkgs)
 
-            if install_type == ACTION_UPGRADE:
+            if self.install_type == ACTION_UPGRADE:
                 self.base.upgrade_all()
                 self.base.resolve(self.cli.demands.allow_erasing)
                 install_set = self.base.transaction.install_set
@@ -516,46 +639,42 @@ class TuiCommand(commands.Command):
                 self.base._transaction = None
 
         if len(display_pkgs)==0:
-            if install_type==ACTION_INSTALL:
+            if self.install_type==ACTION_INSTALL:
                 stage = STAGE_NEXT
-            elif install_type==ACTION_UPGRADE:
-                hkey = HotkeyAttentionWindow(screen, ATTENTON_NONE_UPGRADE)
+            elif self.install_type==ACTION_UPGRADE:
+                hkey = HotkeyAttentionWindow(self.screen, ATTENTON_NONE_UPGRADE)
                 return ("b", selected_pkgs, packages)
             else:
-                hkey = HotkeyAttentionWindow(screen, ATTENTON_NONE)
+                hkey = HotkeyAttentionWindow(self.screen, ATTENTON_NONE)
                 return ("b", selected_pkgs, packages)
+
+        if custom_type == RECORD_INSTALL:
+            selected_pkgs = []
+            selected_pkgs = self.Read_ConfigFile(display_pkgs, selected_pkgs)
 
         while True:
             if stage == STAGE_SELECT:
                 if search == None:
-                    (hkey, position, pkglist) = PKGINSTPackageWindow(screen, \
+                    (hkey, position, pkglist) = PKGINSTPackageWindow(self.screen, \
                                                             display_pkgs, \
                                                             selected_pkgs, \
                                                             position, \
                                                             iTargetSize, \
                                                             iHostSize, \
                                                             search, \
-                                                            install_type)
+                                                            self.install_type)
                 else:
-                    (hkey, search_position, pkglist) = PKGINSTPackageWindow(screen, \
+                    (hkey, search_position, pkglist) = PKGINSTPackageWindow(self.screen, \
                                                              searched_ret, \
                                                              selected_pkgs, \
                                                              search_position, \
                                                              iTargetSize, \
                                                              iHostSize, \
                                                              search, \
-                                                             install_type)
+                                                             self.install_type)
 
-                if hkey == "n":
-                    stage = STAGE_NEXT
-                elif hkey == "b":
-                    stage = STAGE_BACK
-                elif hkey == "i":
-                    stage = STAGE_INFO
-                elif hkey == "x":
-                    stage = STAGE_EXIT
-                elif hkey == 'r':
-                    stage = STAGE_SEARCH
+                stage = hotkey_switch.get(hkey, None)
+
             elif stage == STAGE_NEXT:
                 search = None
                 #if in packages select Interface:
@@ -563,10 +682,10 @@ class TuiCommand(commands.Command):
                     return ("n", selected_pkgs, pkgs_spec)
                 #if in special type packages(dev,doc,locale) select Interface:
                 else:
-                    if not no_gpl3:
-                        if install_type == ACTION_INSTALL : confirm_type = CONFIRM_INSTALL
+                    if not self.no_gpl3:
+                        if self.install_type == ACTION_INSTALL : confirm_type = CONFIRM_INSTALL
 
-                        hkey = HotkeyExitWindow(screen, confirm_type)
+                        hkey = HotkeyExitWindow(self.screen, confirm_type)
                         if hkey == "y":
                             return ("n", selected_pkgs, packages)
                         elif hkey == "n":
@@ -581,22 +700,22 @@ class TuiCommand(commands.Command):
                     return ("b", selected_pkgs, pkgs_spec)
             elif stage == STAGE_INFO:
                 if not search == None:
-                    PKGINSTPackageInfoWindow(screen, searched_ret[search_position])
+                    PKGINSTPackageInfoWindow(self.screen, searched_ret[search_position])
                 else:
-                    PKGINSTPackageInfoWindow(screen, display_pkgs[position])
+                    PKGINSTPackageInfoWindow(self.screen, display_pkgs[position])
                 stage = STAGE_SELECT
             elif stage == STAGE_EXIT:
-                hkey = HotkeyExitWindow(screen)
+                hkey = HotkeyExitWindow(self.screen)
                 if hkey == "y":
-                    if screen != None:
-                        StopHotkeyScreen(screen)
-                        screen = None
+                    if self.screen != None:
+                        StopHotkeyScreen(self.screen)
+                        self.screen = None
                     sys.exit(0)
                 elif hkey == "n":
                     stage = STAGE_SELECT
             elif stage == STAGE_SEARCH:
                 search_position = 0
-                search = PKGINSTPackageSearchWindow(screen)
+                search = PKGINSTPackageSearchWindow(self.screen)
                 if not search == None:
                     def __search_pkgs(keyword, pkgs):
                         searched_pgks = []
@@ -608,12 +727,12 @@ class TuiCommand(commands.Command):
                     searched_ret = __search_pkgs(search, display_pkgs)
                     if len(searched_ret) == 0:
                         buttons = ['OK']
-                        (w, h) = GetButtonMainSize(screen)
-                        rr = ButtonInfoWindow(screen, "Message", "%s - not found." % search, w, h, buttons)
+                        (w, h) = GetButtonMainSize(self.screen)
+                        rr = ButtonInfoWindow(self.screen, "Message", "%s - not found." % search, w, h, buttons)
                         search = None
                 stage = STAGE_SELECT
 
-    def showChangeSet(self, screen, pkgs_set):
+    def showChangeSet(self, pkgs_set):
         gplv3_pkgs = []
         #pkgs = self.opts.pkg_specs
         for pkg in pkgs_set:
@@ -622,7 +741,7 @@ class TuiCommand(commands.Command):
                 if "GPLv3" in license:
                     gplv3_pkgs.append(pkg)
         if len(gplv3_pkgs) > 0:
-            hkey = ConfirmGplv3Window(screen, gplv3_pkgs)
+            hkey = ConfirmGplv3Window(self.screen, gplv3_pkgs)
             if hkey == "b":
                 return "b"
             elif hkey == "n":

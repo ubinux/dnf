@@ -577,7 +577,6 @@ def PKGINSTActionWindowCtrl(insScreen, lstSubject, iType):
                     insScreen = None
                 sys.exit(0)
 
-
 #------------------------------------------------------------
 # def PKGINSTActionWindow()
 #
@@ -645,6 +644,118 @@ def PKGINSTActionWindow(insScreen, lstSubject, iPosition):
     insScreen.popWindow()
     return (myhotkeys[result], idx)
 
+# ------------------------------------------------------------
+# def PKGCUSActionWindowCtrl()
+#
+#    Select install type
+#
+# Input:
+#    insScreen         : screen instance
+#    insPKGINSTXmlinfo : xml information
+#    insPKGINSTPkginfo : package information
+#    iType             : select type (first -1)
+#
+# Output:
+#    int  : select type
+# ------------------------------------------------------------
+def PKGCUSActionWindowCtrl(insScreen, lstSubject, iType):
+
+    type = iType
+
+    while True:
+        (hkey, type) = PKGCUSActionWindow(insScreen, lstSubject, type)
+
+        if hkey == "b" :
+            # back
+            return (hkey, type)
+
+        if hkey == "ENTER" or hkey == " ":
+            # select/unselect
+            return (hkey, type)
+
+        elif hkey == "i":
+            # info
+            description = lstSubject[type][1]
+            subject = lstSubject[type][0]
+            PKGINSTTypeInfoWindow(insScreen, subject, description)
+
+        elif hkey == "x":
+            # exit
+            exit_hkey = HotkeyExitWindow(insScreen)
+            if exit_hkey == "y":
+                if insScreen != None:
+                    StopHotkeyScreen(insScreen)
+                    insScreen = None
+                sys.exit(0)
+
+# ------------------------------------------------------------
+# def PKGCUSActionWindow()
+#
+#   Display action select window.
+#
+# Input:
+#   insScreen  : screen instance
+#   lstSubject : install type subject list
+#      [ str ]
+#        str : subject of each install type
+#   iPosition  : current entry position
+# Output:
+#   str   : pressed hotkey "ENTER", " ", "i", or "x"
+#   int   : position
+# ------------------------------------------------------------
+def PKGCUSActionWindow(insScreen, lstSubject, iPosition):
+
+    # Create CheckboxTree instance
+    (main_width, main_height) = GetHotKeyMainSize(insScreen)
+
+    if len(lstSubject) > main_height:
+        scroll = 1
+    else:
+        scroll = 0
+
+    li = snack.Listbox(main_height, scroll=scroll, width=main_width)
+
+    idx = 0
+    for idx in range(len(lstSubject)):
+        str = "%s" % lstSubject[idx][0]
+        li.append(str, idx)
+
+    num_subject = len(lstSubject)
+    if num_subject > iPosition:
+        li.setCurrent(iPosition)
+    else:
+        li.setCurrent(num_subject - 1)
+    # Create Text instance
+    t1 = snack.Textbox(main_width, 1, "-" * main_width)
+    text = "SPACE/ENTER:select  B:Back  I:Info  X:eXit"
+    t2 = snack.Textbox(main_width, 1, text)
+
+    # Create Grid instance
+    g = snack.GridForm(insScreen, "Select your operation", 1, 3)
+    g.add(li, 0, 0)
+    g.add(t1, 0, 1, (-1, 0, -1, 0))
+    g.add(t2, 0, 2, (0, 0, 0, -1))
+
+    myhotkeys = {"ENTER": "ENTER", \
+                 " ": " ", \
+                 "i": "i", \
+                 "I": "i", \
+                 "x": "x", \
+                 "X": "x", \
+                 "b": "b", \
+                 "B": "b"}
+    for x in myhotkeys.keys():
+        g.addHotKey(x)
+
+    # Display window
+    while True:
+        result = g.run()
+        if result in myhotkeys:
+            idx = li.current()
+            break
+
+    insScreen.popWindow()
+    return (myhotkeys[result], idx)
 
 #------------------------------------------------------------
 # def PKGINSTPackageInfoWindow()
@@ -679,6 +790,12 @@ def PKGINSTPackageInfoWindow(insScreen, pkg):
     license  = pkg.license
     desc     = pkg.description    
 
+    deplist = []
+    for req in sorted([str(req) for req in pkg.requires]):
+        deplist.append(req)
+
+    deplist = sorted(list(set(deplist)))
+
     wrapper = textwrap.TextWrapper(width = main_width - 2)
 
     main_text = []
@@ -698,6 +815,9 @@ def PKGINSTPackageInfoWindow(insScreen, pkg):
 
     main_text.append("Description:\n")
     main_text.append(wrapper.fill(desc) + "\n\n")
+    main_text.append("Dependency:\n")
+    for dep in deplist:
+        main_text.append(wrapper.fill(str(dep)) + "\n")
 
     main_join_text = "".join(main_text)
     del main_text
@@ -815,6 +935,13 @@ def _make_grid_input_path(insScreen, title, label, strText):
     g.add(b, 0, 5)
 
     return e, b, g
+
+def SampleMissWindow(insScreen, error_str):
+    buttons = ['  OK  ']
+    (w, h) = GetButtonMainSize(insScreen)
+    rr = ButtonInfoWindow(insScreen, "  Error !  ", error_str, w, h, buttons)
+    return
+
 #------------------------------------------------------------
 # def PKGINSTPathInputWindow()
 #
@@ -826,7 +953,7 @@ def _make_grid_input_path(insScreen, title, label, strText):
 # Output:
 #   path   : path you have inputed
 #------------------------------------------------------------
-def PKGINSTPathInputWindow(insScreen, check_dir_exist, title, label,text_prev=""):
+def PKGINSTPathInputWindow(insScreen, check_dir_exist, title, label, text_prev=""):
 
     rtn_sts = None
 
@@ -836,10 +963,11 @@ def PKGINSTPathInputWindow(insScreen, check_dir_exist, title, label,text_prev=""
         insScreen.popWindow()
         str = e.value()
 
+        result = b.buttonPressed(r)
         if b.buttonPressed(r) == "ok":
             #  judge if or not the input is correct
             if check_dir_exist :
-                if os.path.isdir(str) :
+                if os.path.isdir(str) or os.path.isfile(str):
                     rtn_sts=str
                 else:
                     buttons = ['  OK  ']
@@ -860,9 +988,13 @@ def PKGINSTPathInputWindow(insScreen, check_dir_exist, title, label,text_prev=""
                                           "The path but the last folder must exist. Please check it ! ", \
                                           w, h, buttons)
         else:
+            if str:
+                text_prev = str
+            rtn_sts = text_prev
             break
-        text_prev = str
-    return rtn_sts
+
+    insScreen.popWindow()
+    return (result, rtn_sts)
 
 def PKGINSTPackageSearchWindow(insScreen):
 
