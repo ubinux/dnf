@@ -150,6 +150,18 @@ dnf-show() {
     fi
 }
 
+Repos-rootfs(){
+            cd ${HIDDEN_ROOTFS}
+            echo "Packing the tar file"
+            tar -cjf ../${ROOTFS_TAR} ./*
+            unset LD_PRELOAD
+            sudo mkdir -p ${TARGET_ROOTFS}/rootfs-${RELEASE}-${Date}
+            echo "Unpacking tar file to target dir"
+            sudo tar -xjf ../${ROOTFS_TAR} -C ${TARGET_ROOTFS}/rootfs-${RELEASE}-${Date} --numeric-owner
+            sudo rm ${TARGET_ROOTFS}/rootfs-${RELEASE}-${Date}/etc/dnf/dnf-host.conf
+            rm ../${ROOTFS_TAR}
+}
+
 dnf-call() {
     if [ ! -f $WORKDIR/.env-dnf ]; then
         echo "Init the environment failed, please init again"
@@ -177,26 +189,10 @@ dnf-call() {
         if [ -f .md5 ];then
             md5sum -c .md5 --status > /dev/null
             if [ $? = 1 -a "$1"x = "tui"x ]; then
-                cd ${HIDDEN_ROOTFS}
-                echo "Packing the tar file"
-                tar -cjf ../${ROOTFS_TAR} ./*
-                unset LD_PRELOAD
-                sudo mkdir -p ${TARGET_ROOTFS}/rootfs-${RELEASE}-${Date}
-                echo "Unpacking tar file to target dir"
-                sudo tar -xjf ../${ROOTFS_TAR} -C ${TARGET_ROOTFS}/rootfs-${RELEASE}-${Date} --numeric-owner
-                sudo rm ${TARGET_ROOTFS}/rootfs-${RELEASE}-${Date}/etc/dnf/dnf-host.conf
-                rm ../${ROOTFS_TAR}
+                Repos-rootfs
             fi
         elif [ -f ${HIDDEN_ROOTFS}/var/lib/rpm/Packages -a "#$1" = "#tui" ];then
-            cd ${HIDDEN_ROOTFS}
-            echo "Packing the tar file"
-            tar -cjf ../${ROOTFS_TAR} ./*
-            unset LD_PRELOAD
-            sudo mkdir -p ${TARGET_ROOTFS}/rootfs-${RELEASE}-${Date}
-            echo "Unpacking tar file to target dir"
-            sudo tar -xjf ../${ROOTFS_TAR} -C ${TARGET_ROOTFS}/rootfs-${RELEASE}-${Date} --numeric-owner
-            sudo rm ${TARGET_ROOTFS}/rootfs-${RELEASE}-${Date}/etc/dnf/dnf-host.conf
-            rm ../${ROOTFS_TAR}
+            Repos-rootfs
         fi
     fi
 }
