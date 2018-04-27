@@ -46,7 +46,7 @@ Install_actions = [("Install", "Choose it to install packages."), \
                   ]
 
 Custom_actions = [("New", "Install without config file."), \
-                  ("Saved file", "Install with last config file"),  \
+                  ("Load package file", "Load config file"),  \
                   ("Samples", "Samples for package list")
                   ]
 

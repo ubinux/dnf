@@ -1,33 +1,49 @@
-From c7f8caad8ed40d61977ddc2ad120249141339690 Mon Sep 17 00:00:00 2001
+From 35e530fe8bf6ee7b543b3f4b715d01540f27874c Mon Sep 17 00:00:00 2001
 From: Zheng Ruoqin <zhengrq.fnst@cn.fujitsu.com>
-Date: Wed, 17 Jan 2018 05:08:33 +0000
+Date: Thu, 26 Apr 2018 11:13:34 +0000
 Subject: [PATCH] Modified the URL of dnf intead of upstream.
 
 Signed-off-by: Zheng Ruoqin <zhengrq.fnst@cn.fujitsu.com>
 ---
- meta/recipes-devtools/dnf/dnf_2.6.3.bb | 28 +++++++++++++++++++---------
- 1 file changed, 19 insertions(+), 9 deletions(-)
+ .../dnf/dnf/oe-remote-repo.repo.sample             |  5 ++++
+ meta/recipes-devtools/dnf/dnf_2.6.3.bb             | 30 ++++++++++++++++------
+ 2 files changed, 27 insertions(+), 8 deletions(-)
+ create mode 100644 meta/recipes-devtools/dnf/dnf/oe-remote-repo.repo.sample
 
+diff --git a/meta/recipes-devtools/dnf/dnf/oe-remote-repo.repo.sample b/meta/recipes-devtools/dnf/dnf/oe-remote-repo.repo.sample
+new file mode 100644
+index 0000000..6c4502e
+--- /dev/null
++++ b/meta/recipes-devtools/dnf/dnf/oe-remote-repo.repo.sample
+@@ -0,0 +1,5 @@
++[base]
++name=myrepo
++baseurl=http://127.0.0.1/oe_repo/
++enabled=1
++gpgcheck=0
 diff --git a/meta/recipes-devtools/dnf/dnf_2.6.3.bb b/meta/recipes-devtools/dnf/dnf_2.6.3.bb
-index 3ed6a74..9847101 100644
+index 3ed6a74..7c6c401 100644
 --- a/meta/recipes-devtools/dnf/dnf_2.6.3.bb
 +++ b/meta/recipes-devtools/dnf/dnf_2.6.3.bb
-@@ -4,29 +4,26 @@ LIC_FILES_CHKSUM = "file://COPYING;md5=b234ee4d69f5fce4486a80fdaf4a4263 \
+@@ -4,29 +4,30 @@ LIC_FILES_CHKSUM = "file://COPYING;md5=b234ee4d69f5fce4486a80fdaf4a4263 \
                      file://PACKAGE-LICENSING;md5=bfc29916e11321be06924c4fb096fdcc \
                     "
  
 -SRC_URI = "git://github.com/rpm-software-management/dnf.git \
--           file://0029-Do-not-set-PYTHON_INSTALL_DIR-by-running-python.patch \
++SRC_URI = "git://github.com/ubinux/dnf.git;branch=dnf-yocto2.4 \
+            file://0029-Do-not-set-PYTHON_INSTALL_DIR-by-running-python.patch \
 -           file://0030-Run-python-scripts-using-env.patch \
 -           file://0001-Do-not-prepend-installroot-to-logdir.patch \
 -           file://0001-Do-not-hardcode-etc-and-systemd-unit-directories.patch \
 -           file://0001-Corretly-install-tmpfiles.d-configuration.patch \
 -           file://0001-Check-conf.releasever-instead-of-releasever.patch \
-+SRC_URI = "git://github.com/ubinux/dnf.git;branch=dnf-yocto2.4 \
             "
  
 -SRCREV = "be2585183ec4485ee4d5e121f242d8669296f065"
-+SRCREV = "9607667fad095ed9ce9c033f2d8820ecca6f21cb"
++SRC_URI_append_class-target = "file://oe-remote-repo.repo.sample"
++                             
++
++SRCREV = "bb4de0bba6caf442ba37af908713a4dee89be3b1"
  UPSTREAM_CHECK_GITTAGREGEX = "(?P<pver>\d+(\.\d+)+)"
  
  S = "${WORKDIR}/git"
@@ -48,7 +64,7 @@ index 3ed6a74..9847101 100644
  # Recommend gnupg so that GPG signature check on repository metadata is possible
  RRECOMMENDS_${PN}_class-target += "gnupg"
  
-@@ -45,6 +42,19 @@ do_install_append_class-native() {
+@@ -45,6 +46,19 @@ do_install_append_class-native() {
                  RPM_NO_CHROOT_FOR_SCRIPTS=1
  }
  
