@@ -64,7 +64,11 @@ else
         exit 0
     fi
     echo "Creating repo"
-    createrepo_c.real --update -q $REPO_DIR
+    if [ ! -d $REPO_DIR/comps.xml ]; then
+        createrepo_c.real --update -q -g comps.xml $REPO_DIR
+    else
+        createrepo_c.real --update -q $REPO_DIR
+    fi
 fi
 
 #necessary dnf config

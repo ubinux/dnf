@@ -151,15 +151,15 @@ dnf-show() {
 }
 
 Repos-rootfs(){
-            cd ${HIDDEN_ROOTFS}
-            echo "Packing the tar file"
-            tar -cjf ../${ROOTFS_TAR} ./*
-            unset LD_PRELOAD
-            sudo mkdir -p ${TARGET_ROOTFS}/rootfs-${RELEASE}-${Date}
-            echo "Unpacking tar file to target dir"
-            sudo tar -xjf ../${ROOTFS_TAR} -C ${TARGET_ROOTFS}/rootfs-${RELEASE}-${Date} --numeric-owner
-            sudo rm ${TARGET_ROOTFS}/rootfs-${RELEASE}-${Date}/etc/dnf/dnf-host.conf
-            rm ../${ROOTFS_TAR}
+    cd ${HIDDEN_ROOTFS}
+    echo "Packing the tar file"
+    tar -cjf ../${ROOTFS_TAR} ./*
+    unset LD_PRELOAD
+    sudo mkdir -p ${TARGET_ROOTFS}/rootfs-${RELEASE}-${Date}
+    echo "Unpacking tar file to target dir"
+    sudo tar -xjf ../${ROOTFS_TAR} -C ${TARGET_ROOTFS}/rootfs-${RELEASE}-${Date} --numeric-owner
+    sudo rm ${TARGET_ROOTFS}/rootfs-${RELEASE}-${Date}/etc/dnf/dnf-host.conf
+    rm ../${ROOTFS_TAR}
 }
 
 dnf-call() {
