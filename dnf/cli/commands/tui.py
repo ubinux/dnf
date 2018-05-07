@@ -305,7 +305,8 @@ class TuiCommand(commands.Command):
                                 logger.error(_("%s."), e)
                             get_text = f.read()
                             config_list = get_text.split('\n')
-                            pkg_str = ' '.join(config_list)
+                            config_list.pop() 
+                            #pkg_str = ' '.join(config_list)
                             stage = STAGE_PROCESS
 
                     else:
@@ -376,8 +377,9 @@ class TuiCommand(commands.Command):
                         break
                     else:
                         if custom_type == SAMPLE_INSTALL:
-                            s_line = ["install", pkg_str]
-                            self.run_dnf_command(s_line)
+                            for pkg in config_list:
+                                s_line = ["install", pkg]
+                                self.run_dnf_command(s_line)
                             hkey = HotkeyExitWindow(self.screen, CONFIRM_INSTALL)
                             if hkey == "n":
                                 stage = STAGE_SAMPLE_INSTALL

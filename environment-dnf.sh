@@ -64,7 +64,7 @@ else
         exit 0
     fi
     echo "Creating repo"
-    if [ ! -d $REPO_DIR/comps.xml ]; then
+    if [ -f $REPO_DIR/comps.xml ]; then
         createrepo_c.real --update -q -g comps.xml $REPO_DIR
     else
         createrepo_c.real --update -q $REPO_DIR
