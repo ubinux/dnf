@@ -71,7 +71,10 @@ ATTENTON_NONE           = 0
 ATTENTON_HAVE_UPGRADE   = 1
 ATTENTON_NONE_UPGRADE   = 2
 
-NATIVE_SYSROOT = os.environ["OECORE_NATIVE_SYSROOT"]
+if "OECORE_NATIVE_SYSROOT" in os.environ:
+    NATIVE_SYSROOT = os.environ["OECORE_NATIVE_SYSROOT"]
+else:
+    NATIVE_SYSROOT = "/opt/poky/2.4.2/sysroots/x86_64-pokysdk-linux"
 SAMPLE = NATIVE_SYSROOT + "/usr/share/dnf"
 
 logger = logging.getLogger('dnf')
