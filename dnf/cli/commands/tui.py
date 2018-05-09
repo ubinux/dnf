@@ -71,7 +71,8 @@ ATTENTON_NONE           = 0
 ATTENTON_HAVE_UPGRADE   = 1
 ATTENTON_NONE_UPGRADE   = 2
 
-SAMPLE = "./samples"
+NATIVE_SYSROOT = os.environ["OECORE_NATIVE_SYSROOT"]
+SAMPLE = NATIVE_SYSROOT + "/usr/share/dnf"
 
 logger = logging.getLogger('dnf')
 
@@ -158,7 +159,7 @@ class TuiCommand(commands.Command):
         if os.path.isdir(SAMPLE):
             for (root, dirs, filenames) in os.walk(SAMPLE):
                 for filename in filenames:
-                    sample = (filename, filename + " Package list")
+                    sample = (filename, filename + " based root file system")
                     sample_list.append(sample)
             return (True, sample_list)
         else:
@@ -303,6 +304,9 @@ class TuiCommand(commands.Command):
                                 f = open(config_file, "r")
                             except Exception as e:
                                 logger.error(_("%s."), e)
+                                StopHotkeyScreen(self.screen)
+                                self.screen = None
+                                sys.exit(0)
                             get_text = f.read()
                             config_list = get_text.split('\n')
                             config_list.pop() 
