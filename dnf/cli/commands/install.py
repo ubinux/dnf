@@ -25,6 +25,7 @@ from dnf.cli.option_parser import OptionParser
 from dnf.i18n import _
 from itertools import chain
 
+import dnf.subject
 import dnf.exceptions
 import hawkey
 import logging
@@ -48,6 +49,12 @@ class InstallCommand(commands.Command):
         parser.add_argument('package', nargs='+', metavar=_('PACKAGE'),
                           action=OptionParser.ParseSpecGroupFileCallback,
                           help=_('Package to install'))
+        parser.add_argument("--with-spdx", dest="with_spdx",
+                                 action="store_true", default=None,
+                                 help=_("download_spdx_file"))
+        parser.add_argument("--with-srpm", dest="with_srpm",
+                                 action="store_true", default=None,
+                                 help=_("download_srpm_file"))
 
     def configure(self):
         """Verify that conditions are met so that this command can run.
@@ -67,6 +74,16 @@ class InstallCommand(commands.Command):
         strict = self.base.conf.strict
         forms = [self.nevra_forms[command] for command in self.opts.command
                  if command in list(self.nevra_forms.keys())]
+
+        if self.opts.with_spdx:
+            self.base.conf.with_spdx = True
+        else:
+            self.base.conf.with_spdx = False
+
+        if self.opts.with_srpm:
+            self.base.conf.with_srpm = True
+        else:
+            self.base.conf.with_srpm = False
 
         self.cli._populate_update_security_filter(self.opts, minimal=True)
 

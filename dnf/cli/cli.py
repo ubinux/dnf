@@ -48,11 +48,15 @@ import dnf.cli.commands.repoquery
 import dnf.cli.commands.search
 import dnf.cli.commands.shell
 import dnf.cli.commands.swap
+import dnf.cli.commands.tui
 import dnf.cli.commands.updateinfo
 import dnf.cli.commands.upgrade
 import dnf.cli.commands.upgrademinimal
+import dnf.cli.commands.fetchspdx
+import dnf.cli.commands.fetchsrpm
 import dnf.cli.demand
 import dnf.cli.option_parser
+import dnf.cli.utils
 import dnf.conf
 import dnf.conf.parser
 import dnf.conf.substitutions
@@ -242,6 +246,23 @@ class BaseCli(dnf.Base):
             for tsi in trans:
                 if tsi.op_type == dnf.transaction.FAIL:
                     raise dnf.exceptions.Error(_('Transaction failed'))
+
+        ''' only enable for install command.
+            The value of installed is the pkg will be installed
+         '''
+        try:
+            if installed is not None:
+                if self.conf.with_spdx:
+                    srcdir_path = self.conf.spdx_repodir
+                    destdir_path = self.conf.spdx_download
+                    dnf.cli.utils.fetchSPDXorSRPM('spdx',install_pkgs, srcdir_path, destdir_path)
+
+                if self.conf.with_srpm:
+                    srcdir_path = self.conf.srpm_repodir
+                    destdir_path = self.conf.srpm_download
+                    dnf.cli.utils.fetchSPDXorSRPM('srpm',install_pkgs, srcdir_path, destdir_path)
+        except:
+            return
 
     def gpgsigcheck(self, pkgs):
         """Perform GPG signature verification on the given packages,
@@ -674,6 +695,7 @@ class Cli(object):
         self.register_command(dnf.cli.commands.search.SearchCommand)
         self.register_command(dnf.cli.commands.shell.ShellCommand)
         self.register_command(dnf.cli.commands.swap.SwapCommand)
+        self.register_command(dnf.cli.commands.tui.TuiCommand)
         self.register_command(dnf.cli.commands.updateinfo.UpdateInfoCommand)
         self.register_command(dnf.cli.commands.upgrade.UpgradeCommand)
         self.register_command(dnf.cli.commands.upgrademinimal.UpgradeMinimalCommand)
@@ -684,6 +706,8 @@ class Cli(object):
         self.register_command(dnf.cli.commands.RepoPkgsCommand)
         self.register_command(dnf.cli.commands.HelpCommand)
         self.register_command(dnf.cli.commands.HistoryCommand)
+        self.register_command(dnf.cli.commands.fetchspdx.Fetch_spdxCommand)
+        self.register_command(dnf.cli.commands.fetchsrpm.Fetch_srpmCommand)
 
     def _configure_repos(self, opts):
         self.base.read_all_repos(opts)
