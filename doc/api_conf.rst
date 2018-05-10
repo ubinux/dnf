@@ -1,5 +1,5 @@
 ..
-  Copyright (C) 2014-2016 Red Hat, Inc.
+  Copyright (C) 2014-2018 Red Hat, Inc.
 
   This copyrighted material is made available to anyone wishing to use,
   modify, copy, or redistribute it subject to the terms and conditions of
@@ -216,13 +216,16 @@ Configurable settings of the :class:`dnf.Base` object are stored into a :class:`
     nodocs                  RPMTRANS_FLAG_NODOCS
     justdb                  RPMTRANS_FLAG_JUSTDB
     nocontexts              RPMTRANS_FLAG_NOCONTEXTS
+    nocaps                  RPMTRANS_FLAG_NOCAPS
     nocrypto                RPMTRANS_FLAG_NOFILEDIGEST
     ==========              ===========================
 
-    The ``"nocrypto"`` option will also set the ``_RPMVSF_NOSIGNATURES`` and ``_RPMVSF_NODIGESTS`` VS flags.
-    The ``test`` option provides a transaction check without performing the transaction. It includes
-    download of packages, gpg keys check (including permanent import of additional keys if
-    necessary), and rpm check to prevent file conflicts.
+    The ``nocrypto`` option will also set the ``_RPMVSF_NOSIGNATURES`` and ``_RPMVSF_NODIGESTS`` VS
+    flags.     The ``test`` option provides a transaction check without performing the transaction.
+    It includes download of packages, gpg keys check (including permanent import of additional keys
+    if necessary), and rpm check to prevent file conflicts.
+    The ``nocaps`` is supported with rpm-4.14 or later. When ``nocaps`` is used but rpm doesn't
+    support it, DNF only reports it as an invalid tsflag.
 
   .. attribute:: username
 

@@ -1,5 +1,5 @@
 ..
-  Copyright (C) 2014-2016 Red Hat, Inc.
+  Copyright (C) 2014-2018 Red Hat, Inc.
 
   This copyrighted material is made available to anyone wishing to use,
   modify, copy, or redistribute it subject to the terms and conditions of
@@ -33,8 +33,8 @@ Description
 
 .. _command_provides-label:
 
-`DNF`_ is the next upcoming major version of `Yum`_, a package manager for RPM-based Linux
-distributions. It roughly maintains CLI compatibility with Yum and defines a strict API for
+`DNF`_ is the next upcoming major version of `YUM`_, a package manager for RPM-based Linux
+distributions. It roughly maintains CLI compatibility with YUM and defines a strict API for
 extensions and plugins.
 
 Plugins can modify or extend features of DNF or provide additional CLI commands on top of those
@@ -83,7 +83,7 @@ Available commands:
 * :ref:`upgrade-minimal <upgrade_minimal_command-label>`
 * :ref:`upgrade-to <upgrade_to_command-label>`
 
-Additional informations:
+Additional information:
 
 * :ref:`Options <options-label>`
 * :ref:`Specifying Packages <specifying_packages-label>`
@@ -134,6 +134,9 @@ Options
 
     DNF uses a separate cache for each user under which it executes. The cache for the root user is called the system cache. This switch allows a regular user read-only access to the system cache which usually is more fresh than the user's and thus he does not have to wait for metadata sync.
 
+``--comment=<comment>``
+    add a comment to transaction history
+
 ``-c <config file>, --config=<config file>``
     config file location
 
@@ -166,8 +169,9 @@ Options
 
 ``--downloaddir=<path>``
     Redirect downloaded packages to provided directory. The option has to by used together with \-\
-    :ref:`-downloadonly <downloadonly-label>` command line option or with ``download`` command
-    (dnf-plugins-core).
+    :ref:`-downloadonly <downloadonly-label>` command line option or with
+    ``download`` command (dnf-plugins-core) or with ``system-upgrade`` command
+    (dnf-plugins-extras).
 
 .. _downloadonly-label:
 
@@ -188,8 +192,13 @@ Options
     Include enhancement relevant packages. Applicable for install, repoquery, updateinfo, and
     upgrade command.
 
+.. _exclude_option-label:
+
 ``-x <package-spec>, --exclude=<package-spec>``
     Exclude packages specified by ``<package-spec>`` from the operation.
+
+``--excludepkgs=<package-spec>``
+    Deprecated option. It was replaced by \-\ :ref:`-exclude <exclude_option-label>` option.
 
 ``--forcearch=<arch>``
     Force the use of an architecture. Any architecture can be specified.
@@ -245,7 +254,7 @@ Options
     :ref:`clean_requirements_on_remove <clean_requirements_on_remove-label>` conf option to ``False``.
 
 ``--nodocs``
-    do not install documentations by using rpm flag 'RPMTRANS_FLAG_NODOCS'
+    do not install documentation by using rpm flag 'RPMTRANS_FLAG_NODOCS'
 
 ``--nogpgcheck``
     skip checking GPG signatures on packages
@@ -260,8 +269,8 @@ Options
     dnf's obsoletes processing logic. For more information see the
     :ref:`obsoletes option <obsoletes_conf_option-label>`.
 
-    Option also affects :ref:`repoquery command <repoquery_command-label>`,
-    it display's capabilities that the package obsoletes.
+    This option also affects the :ref:`repoquery command <repoquery_command-label>`,
+    it displays capabilities that the package obsoletes.
 
     Configuration Option: :ref:`obsoletes <obsoletes_conf_option-label>`
 
@@ -310,7 +319,11 @@ Options
     upgrade command.
 
 ``--setopt=<option>=<value>``
-    override a config option from the config file. To override config options from repo files, use ``repoid.option`` for the ``<option>``.
+    override a config option from the config file. To override config options from repo files, use
+    ``repoid.option`` for the ``<option>``. Conf options like ``excludepkgs``, ``includepkgs``,
+    ``installonlypkgs``, and ``tsflags`` work as append option, therefore they are not overridden
+    but the value is appended. If there is no value like ``--setopt=tsflags=`` it remove all values
+    in append options.
 
 ``--skip-broken``
     Resolve depsolve problems by removing packages that are causing problems from the transaction.
@@ -370,7 +383,8 @@ this command.
     it. It also removes any dependencies that are no longer needed.
 
     There are also a few specific autoremove commands ``autoremove-n``, ``autoremove-na`` and
-    ``autoremove-nevra`` that allow specification of exact argument NEVRA format.
+    ``autoremove-nevra`` that allow the specification of an exact argument in NEVRA
+    (name-epoch:version-release.architecture) format.
 
 This command by default does not force a sync of expired metadata. See also :ref:`\metadata_synchronization-label`.
 
@@ -455,7 +469,9 @@ Downgrade Command
 -----------------
 
 ``dnf [options] downgrade <package-installed-specs>...``
-    Downgrades the specified packages to the highest of all known lower versions if possible. When version is given and is lower than version of installed package then it downgrades to target version.
+    Downgrades the specified packages to the highest installable package of all known lower versions
+    if possible. When version is given and is lower than version of installed package then it
+    downgrades to target version.
 
 .. _erase_command-label:
 
@@ -574,11 +590,12 @@ transactions and act according to this information (assuming the
     It will show all installonly packages, packages installed outside of DNF and packages not
     installed as dependency. I.e. it lists packages that will stay on the system when
     :ref:`\autoremove_command-label` or :ref:`\remove_command-label` along with
-    `clean_requirements_on_remove` configuration option set to True is executed. Same results can be
-    accomplished with "dnf repoquery --userinstalled" but repoquery command is much more powerful in
-    formatting of an output.
+    `clean_requirements_on_remove` configuration option set to True is executed. Note the same
+    results can be accomplished with ``dnf repoquery --userinstalled``, and the repoquery
+    command is more powerful in formatting of the output.
 
-This command by default does not force a sync of expired metadata.
+This command by default does not force a sync of expired metadata, except for
+the redo, rollback, and undo subcommands.
 See also :ref:`\metadata_synchronization-label`
 and :ref:`\configuration_files_replacement_policy-label`.
 
@@ -588,7 +605,7 @@ and :ref:`\configuration_files_replacement_policy-label`.
 Info Command
 ------------
 
-``dnf [options] info [<package-spec>...]``
+``dnf [options] info [<package-name-spec>...]``
     Is used to list description and summary information about installed and available packages.
 
 This command by default does not force a sync of expired metadata. See also :ref:`\metadata_synchronization-label`.
@@ -612,7 +629,7 @@ Install Command
     will be removed in the case of non-installonly package.
 
     There are also a few specific install commands ``install-n``, ``install-na`` and
-    ``install-nevra`` that allow to specify exact argument NEVRA format.
+    ``install-nevra`` that allow the specification of an exact argument in NEVRA format.
 
     See also :ref:`\configuration_files_replacement_policy-label`.
 
@@ -779,7 +796,17 @@ Remove Command
     Removes old installonly packages keeping only ``installonly_limit`` latest versions.
 
     There are also a few specific remove commands ``remove-n``, ``remove-na`` and ``remove-nevra``
-    that allow to specify exact argument NEVRA format.
+    that allow the specification of an exact argument in NEVRA format.
+
+Remove Examples
+---------------
+
+``dnf remove acpi tito``
+    Remove packages ``acpi`` and ``tito``
+
+``dnf remove $(dnf repoquery --extras --exclude=tito,acpi)``
+    Remove packages not present in any repository, but it doesn't remove packages ``tito``
+    and ``acpi`` (they still might be removed if they require some of the removed packages).
 
 .. _repoinfo_command-label:
 
@@ -787,7 +814,7 @@ Remove Command
 Repoinfo Command
 ----------------
 
-    This command is alias for :ref:`repolist <repolist_command-label>` command
+    This command is an alias for the :ref:`repolist <repolist_command-label>` command
     that provides more detailed information like ``dnf repolist -v``.
 
 .. _repolist_command-label:
@@ -817,7 +844,7 @@ Repoquery Command
     Provides list of recognized tags by repoquery option \-\ :ref:`-queryformat <queryformat_repoquery-label>`
 
     There are also a few specific repoquery commands ``repoquery-n``, ``repoquery-na`` and ``repoquery-nevra``
-    that allow to specify exact argument NEVRA format (does not affect arguments of options like --whatprovides <arg>, ...).
+    that allow the specification of an exact argument in NEVRA format (does not affect arguments of options like --whatprovides <arg>, ...).
 
 Select Options
 --------------
@@ -827,14 +854,17 @@ resulting packages matching the specification. All packages are considered if no
 
 ``<pkg-spec>``
     Package specification like: name[-[epoch:]version[-release]][.arch]. See :ref:`Specifying Packages
-    <specifying_packages-label>`
+    <specifying_packages-label>`.
 
 ``-a``, ``--all``
     Query all packages (for rpmquery compatibility / shorthand for repoquery '*' or repoquery
-    without argument)'
+    without arguments).
 
 ``--arch <arch>[,<arch>...]``
-    Limit the resulting set only to packages of selected architectures.
+    Limit the resulting set only to packages of selected architectures. (The default is all
+    architectures.) In some cases the result is affected by basearch of running system, therefore
+    to run repoquery for an arch incompatible with your system use the ``--forcearch=<arch>``
+    option to change the basearch.
 
 ``--duplicates``
     Limit the resulting set to installed duplicated packages (i.e. more package versions
@@ -863,7 +893,7 @@ resulting packages matching the specification. All packages are considered if no
 
 ``--latest-limit <number>``
     Limit the resulting set to <number> of latest packages for every package name and architecture.
-    If <number> is negative skip <number> of latest packages. If negative number is used use syntax
+    If <number> is negative skip <number> of latest packages. If negative number is supplied use syntax
     ``--latest-limit=<number>``.
 
 ``--recent``
@@ -884,6 +914,10 @@ resulting packages matching the specification. All packages are considered if no
     Limit the resulting set to packages instaled by user. The :ref:`exclude <exclude-label>` option
     in configuration file (.conf) might influence the result, but if the command line option  \-\
     :ref:`-disableexcludes <disableexcludes-label>` is used, it ensures that all installed packages will be listed.
+
+``--whatdepends <capability>``
+    Limit the resulting set only to packages that require, enhance, recommend,  suggest, or
+    supplement ``<capability>``.
 
 ``--whatconflicts <capability>``
     Limit the resulting set only to packages that conflict ``<capability>``.
@@ -910,12 +944,12 @@ resulting packages matching the specification. All packages are considered if no
     Limit the resulting set only to packages that supplement ``<capability>``.
 
 ``--alldeps``
-    This option is stackable with ``--whatrequires`` only. Additionally it adds to the result set all packages requiring
-    the package features (used as default).
+    This option is stackable with ``--whatrequires``  or ``--whatdepends`` only. Additionally it
+    adds to the result set all packages requiring the package features (used as default).
 
 ``--exactdeps``
-    This option is stackable with ``--whatrequires`` only. Limit the resulting set only to packages that require
-    ``<capability>`` specified by --whatrequires.
+    This option is stackable with ``--whatrequires`` or ``--whatdepends`` only. Limit the resulting
+    set only to packages that require ``<capability>`` specified by --whatrequires.
 
 ``--srpm``
     Operate on corresponding source RPM.
@@ -941,6 +975,10 @@ are displayed in the standard NEVRA notation.
 
 ``--conflicts``
     Display capabilities that the package conflicts with. Same as ``--qf "%{conflicts}``.
+
+``--depends``
+    Display capabilities that the package depends on, enhances, recommends, suggests, or
+    supplements.
 
 ``--enhances``
     Display capabilities enhanced by the package. Same as ``--qf "%{enhances}""``.
@@ -1212,12 +1250,12 @@ Updateinfo Command
     information is even more detailed.
 
     ``<availability>`` specifies whether advisories about newer versions of
-    installed packages (omitted or ``available``), advisories about equal and
-    older versions of installed packages (``installed``), advisories about
+    installed packages (omitted or ``--available``), advisories about equal and
+    older versions of installed packages (``--installed``), advisories about
     newer versions of those installed packages for which a newer version is
-    available (``updates``) or advisories about any versions of installed
-    packages (``all``) are taken into account. Most of the time, ``available``
-    and ``updates`` displays the same output. The outputs differ only in the
+    available (``--updates``) or advisories about any versions of installed
+    packages (``--all``) are taken into account. Most of the time, ``--available``
+    and ``--updates`` displays the same output. The outputs differ only in the
     cases when an advisory refers to a newer version but there is no enabled
     repository which contains any newer version.
 
@@ -1373,7 +1411,7 @@ Metadata Synchronization
 
 Correct operation of DNF depends on having access to up-to-date data from all enabled repositories but contacting remote mirrors on every operation considerably slows it down and costs bandwidth for both the client and the repository provider. The :ref:`metadata_expire <metadata_expire-label>` (see :manpage:`dnf.conf(5)`) repo config option is used by DNF to determine whether particular local copy of repository data is due to be re-synced. It is crucial that the repository providers set the option well, namely to a value where it is guaranteed that if particular metadata was available in time ``T`` on the server, then all packages it references will still be available for download from the server in time ``T + metadata_expire``.
 
-To further reduce the bandwidth load, some of the commands where having up-to-date metadata is not critical (e.g. the ``list`` command) do not look at whether a repository is expired and whenever any version of it is locally available, it will be used. Note that in all situations the user can force synchronization of all enabled repositories with the ``--refresh`` switch.
+To further reduce the bandwidth load, some of the commands where having up-to-date metadata is not critical (e.g. the ``list`` command) do not look at whether a repository is expired and whenever any version of it is locally available to the user's account, it will be used. For non-root use, see also the ``--cacheonly`` switch. Note that in all situations the user can force synchronization of all enabled repositories with the ``--refresh`` switch.
 
 .. _configuration_files_replacement_policy-label:
 
@@ -1412,6 +1450,6 @@ See Also
 * :manpage:`dnf.plugin.*(8)`, assorted DNF plugins that might be installed on the system.
 * `DNF`_ project homepage (https://github.com/rpm-software-management/dnf/)
 * How to report a bug (https://github.com/rpm-software-management/dnf/wiki/Bug-Reporting)
-* `Yum`_ project homepage (http://yum.baseurl.org/)
+* `YUM`_ project homepage (http://yum.baseurl.org/)
 
 .. _dnf config-manager: https://dnf-plugins-core.readthedocs.org/en/latest/config_manager.html

@@ -402,7 +402,7 @@ class RemoteRPMPayload(PackagePayload):
         self.remote_size = 0
         self.handle = handle
         self.conf = conf
-        s = self.conf.releasever + self.conf.substitutions.get('basearch')
+        s = (self.conf.releasever or "") + self.conf.substitutions.get('basearch')
         digest = hashlib.sha256(s.encode('utf8')).hexdigest()[:16]
         repodir = "commandline-" + digest
         self.pkgdir = os.path.join(self.conf.cachedir, repodir, "packages")
@@ -444,6 +444,12 @@ class RemoteRPMPayload(PackagePayload):
 
 class MDPayload(dnf.callback.Payload):
 
+    def __init__(self, progress):
+        super(MDPayload, self).__init__(progress)
+        self._text = ""
+        self._download_size = 0
+        self.fastest_mirror_running = False
+
     def __str__(self):
         if dnf.pycomp.PY3:
             return self._text
@@ -461,8 +467,8 @@ class MDPayload(dnf.callback.Payload):
         if stage == librepo.FMSTAGE_DETECTION:
             # pinging mirrors, this might take a while
             msg = _('determining the fastest mirror (%d hosts).. ') % data
-            self.fm_running = True
-        elif stage == librepo.FMSTAGE_STATUS and self.fm_running:
+            self.fastest_mirror_running = True
+        elif stage == librepo.FMSTAGE_STATUS and self.fastest_mirror_running:
             # done.. report but ignore any errors
             msg = 'error: %s\n' % data if data else 'done.\n'
         else:
@@ -489,8 +495,7 @@ class MDPayload(dnf.callback.Payload):
 
     def start(self, text):
         self._text = text
-        self._download_size = 0
-        self.progress.start(1, 1)
+        self.progress.start(1, 0)
 
     def end(self):
         self._download_size = 0
@@ -670,6 +675,7 @@ class Repo(dnf.conf.RepoConf):
         result = handle._perform()
         if handle.progresscb:
             self._md_pload.end()
+
         return Metadata(result, handle)
 
     def _handle_load_with_pubring(self, handle):
@@ -729,7 +735,7 @@ class Repo(dnf.conf.RepoConf):
 
         # setup download progress
         h.progresscb = self._md_pload._progress_cb
-        self._md_pload.fm_running = False
+        self._md_pload.fastest_mirror_running = False
         h.fastestmirrorcb = self._md_pload._fastestmirror_cb
 
         # apply repo options
@@ -750,7 +756,6 @@ class Repo(dnf.conf.RepoConf):
             h.lowspeedtime = None
         h.proxyuserpwd = _user_pass_str(self.proxy_username, self.proxy_password)
         h.sslverifypeer = h.sslverifyhost = self.sslverify
-
         return h
 
     def _init_hawkey_repo(self):
@@ -807,7 +812,13 @@ class Repo(dnf.conf.RepoConf):
         with dnf.util.tmpdir() as tmpdir, open(repomd_fn) as repomd:
             handle = self._handle_new_remote(tmpdir)
             handle.fetchmirrors = True
+
+            if handle.progresscb:
+                self._md_pload.start(self.name or self.id or 'unknown')
             handle._perform()
+            if handle.progresscb:
+                self._md_pload.end()
+
             if handle.metalink is None:
                 logger.debug(_("reviving: repo '%s' skipped, no metalink."), self.id)
                 return False
@@ -839,7 +850,11 @@ class Repo(dnf.conf.RepoConf):
             handle = self._handle_new_remote(tmpdir)
             handle.yumdlist = librepo.YUM_REPOMDONLY
             with dnf.crypto.pubring_dir(self._pubring_dir):
+                if handle.progresscb:
+                    self._md_pload.start(self.name or self.id or 'unknown')
                 result = handle._perform()
+                if handle.progresscb:
+                    self._md_pload.end()
             fresh_repomd_fn = result.rpmmd_repo['repomd']
             with open(fresh_repomd_fn) as fresh_repomd:
                 if repomd.read() != fresh_repomd.read():
@@ -857,11 +872,6 @@ class Repo(dnf.conf.RepoConf):
             return self._try_revive_by_metalink()
         else:
             return self._try_revive_by_repomd()
-
-    def _configure_from_options(self, opts):
-        if getattr(opts, 'cacheonly', None):
-            self._md_only_cached = True
-        super(Repo, self)._configure_from_options(opts)
 
     def disable(self):
         # :api

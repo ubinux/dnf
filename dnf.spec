@@ -1,14 +1,26 @@
-%global hawkey_version 0.9.3
-%global librepo_version 1.7.19
+# default dependencies
+%global hawkey_version 0.13.5
+%global librepo_version 1.9.0
 %global libcomps_version 0.1.8
-%global rpm_version 4.13.0-0.rc1.29
-%global min_plugins_core 2.1.3
-%global dnf_langpacks_ver 0.15.1-6
+%global rpm_version 4.14.0
 
-%global confdir %{_sysconfdir}/%{name}
+# conflicts
+%global conflicts_dnf_plugins_core_version 2.1.3
 
-%global pluginconfpath %{confdir}/plugins
-%global py2pluginpath %{python2_sitelib}/%{name}-plugins
+# override dependencies for rhel 7
+%if 0%{?rhel} == 7
+    %global rpm_version 4.11.3-32
+%endif
+
+%if 0%{?rhel} == 7 && 0%{?centos}
+    %global rpm_version 4.11.3-25.el7.centos.1
+%endif
+
+# override dependencies for fedora 26
+%if 0%{?fedora} == 26
+    %global rpm_version 4.13.0.1-7
+%endif
+
 
 %if 0%{?rhel} && 0%{?rhel} <= 7
 %bcond_with python3
@@ -16,24 +28,54 @@
 %bcond_without python3
 %endif
 
+%if 0%{?rhel} >= 8
+%bcond_with python2
+%else
+%bcond_without python2
+%endif
+
+# configurable name for the compat yum package
+%global yum_subpackage_name %{name}-yum
+
+# provide yum4 on rhel <= 7 to avoid conflict with existing yum
+%if 0%{?rhel} && 0%{?rhel} <= 7
+    %global yum_subpackage_name yum4
+%endif
+
+# provide yum on rhel >= 8, it replaces old yum
+%if 0%{?rhel} && 0%{?rhel} >= 8
+    %global yum_subpackage_name yum
+%endif
+
+
+# paths
+%global confdir %{_sysconfdir}/%{name}
+%global pluginconfpath %{confdir}/plugins
+
+%if %{with python2}
+    %global py2pluginpath %{python2_sitelib}/%{name}-plugins
+%endif
+
 %if %{with python3}
-%global py3pluginpath %{python3_sitelib}/%{name}-plugins
+    %global py3pluginpath %{python3_sitelib}/%{name}-plugins
 %endif
 
 # Use the same directory of the main package for subpackage licence and docs
 %global _docdir_fmt %{name}
 
+
+%global pkg_summary     Package manager
+%global pkg_description Utility that allows users to manage packages on their systems. \
+It supports RPMs, modules and comps groups & environments.
+
 Name:           dnf
-Version:        2.6.3
+Version:        2.8.9
 Release:        1%{?dist}
-Summary:        Package manager forked from Yum, using libsolv as a dependency resolver
+Summary:        %{pkg_summary}
 # For a breakdown of the licensing, see PACKAGE-LICENSING
 License:        GPLv2+ and GPLv2 and GPL
 URL:            https://github.com/rpm-software-management/dnf
-# git clone https://github.com/rpm-software-management/dnf
-# cd dnf
-# tito build --tgz --tag=dnf-2.5.1-1
-Source0:        %{name}-%{version}.tar.gz
+Source0:        %{url}/archive/%{version}/%{name}-%{version}.tar.gz
 BuildArch:      noarch
 BuildRequires:  cmake
 BuildRequires:  gettext
@@ -48,14 +90,16 @@ Requires:       python2-%{name} = %{version}-%{release}
 %endif
 %if 0%{?rhel} && 0%{?rhel} <= 7
 Requires:       python-dbus
+Requires:       %{_bindir}/sqlite3
 %else
-# TODO: use rich deps once it is allowed
-#Recommends:     (python%{?with_python3:3}-dbus if NetworkManager)
-Recommends:     python%{?with_python3:3}-dbus
+%if %{with python3}
+Recommends:     (python3-dbus if NetworkManager)
+%else
+Recommends:     (python2-dbus if NetworkManager)
 %endif
-Requires(post):     systemd
-Requires(preun):    systemd
-Requires(postun):   systemd
+Recommends:     (%{_bindir}/sqlite3 if bash-completion)
+%endif
+%{?systemd_requires}
 Provides:       dnf-command(autoremove)
 Provides:       dnf-command(check-update)
 Provides:       dnf-command(clean)
@@ -78,163 +122,170 @@ Provides:       dnf-command(search)
 Provides:       dnf-command(updateinfo)
 Provides:       dnf-command(upgrade)
 Provides:       dnf-command(upgrade-to)
-Conflicts:      python2-dnf-plugins-core < %{min_plugins_core}
-Conflicts:      python3-dnf-plugins-core < %{min_plugins_core}
-
-# dnf-langpacks package is retired in F25
-# to have clean upgrade path for dnf-langpacks
-Obsoletes:      dnf-langpacks < %{dnf_langpacks_ver}
+Conflicts:      python2-dnf-plugins-core < %{conflicts_dnf_plugins_core_version}
+Conflicts:      python3-dnf-plugins-core < %{conflicts_dnf_plugins_core_version}
 
 %description
-Package manager forked from Yum, using libsolv as a dependency resolver.
+%{pkg_description}
 
-%package conf
-Summary:        Configuration files for DNF
+%package data
+Summary:        Common data and configuration files for DNF
 Requires:       libreport-filesystem
-# dnf-langpacks package is retired in F25
-# to have clean upgrade path for dnf-langpacks
-Obsoletes:      dnf-langpacks-conf < %{dnf_langpacks_ver}
+Obsoletes:      %{name}-conf <= %{version}-%{release}
+Provides:       %{name}-conf = %{version}-%{release}
 
-%description conf
-Configuration files for DNF.
+%description data
+Common data and configuration files for DNF
 
-%if 0%{?rhel} && 0%{?rhel} <= 7
-%package -n yum4
+%package -n %{yum_subpackage_name}
 Requires:       %{name} = %{version}-%{release}
-Summary:        As a Yum CLI compatibility layer, supplies /usr/bin/yum4 redirecting to DNF
-
-%description -n yum4
-As a Yum CLI compatibility layer, supplies /usr/bin/yum redirecting to DNF.
-
-%else
-%package yum
-Conflicts:      yum < 3.4.3-505
-Requires:       %{name} = %{version}-%{release}
-Summary:        As a Yum CLI compatibility layer, supplies /usr/bin/yum redirecting to DNF
-
-%description yum
-As a Yum CLI compatibility layer, supplies /usr/bin/yum redirecting to DNF.
+Summary:        %{pkg_summary}
+%if 0%{?fedora}
+Conflicts:      yum
 %endif
 
+%description -n %{yum_subpackage_name}
+%{pkg_description}
+
+%if %{with python2}
 %package -n python2-%{name}
 Summary:        Python 2 interface to DNF
 %{?python_provide:%python_provide python2-%{name}}
 BuildRequires:  python2-devel
 BuildRequires:  python2-hawkey >= %{hawkey_version}
-BuildRequires:  python-iniparse
-BuildRequires:  python-libcomps >= %{libcomps_version}
-BuildRequires:  python-librepo >= %{librepo_version}
-BuildRequires:  python-nose
+BuildRequires:  python2-libdnf >= %{hawkey_version}
+BuildRequires:  python2-libcomps >= %{libcomps_version}
+BuildRequires:  python2-librepo >= %{librepo_version}
+BuildRequires:  python2-nose
+%if (0%{?rhel} && 0%{?rhel} <= 7)
+BuildRequires:  pygpgme
+Requires:       pygpgme
+%else
 BuildRequires:  python2-gpg
 Requires:       python2-gpg
+%endif
 BuildRequires:  pyliblzma
-BuildRequires:  rpm-python >= %{rpm_version}
 Requires:       pyliblzma
-Requires:       %{name}-conf = %{version}-%{release}
+Requires:       %{name}-data = %{version}-%{release}
+%if 0%{?fedora} || 0%{?centos}
 Requires:       deltarpm
+%endif
 Requires:       python2-hawkey >= %{hawkey_version}
-Requires:       python-iniparse
-Requires:       python-libcomps >= %{libcomps_version}
-Requires:       python-librepo >= %{librepo_version}
+Requires:       python2-libdnf >= %{hawkey_version}
+Requires:       python2-libcomps >= %{libcomps_version}
+Requires:       python2-librepo >= %{librepo_version}
 %if 0%{?rhel} && 0%{?rhel} <= 7
-Requires:       rpm-plugin-systemd-inhibit
+BuildRequires:  python-iniparse
+Requires:       python-iniparse
+BuildRequires:  rpm-python >= %{rpm_version}
+Requires:       rpm-python >= %{rpm_version}
 %else
+BuildRequires:  python2-iniparse
+Requires:       python2-iniparse
+BuildRequires:  python2-rpm >= %{rpm_version}
+Requires:       python2-rpm >= %{rpm_version}
 Recommends:     rpm-plugin-systemd-inhibit
 %endif
-Requires:       rpm-python >= %{rpm_version}
-# dnf-langpacks package is retired in F25
-# to have clean upgrade path for dnf-langpacks
-Obsoletes:      python-dnf-langpacks < %{dnf_langpacks_ver}
 
 %description -n python2-%{name}
 Python 2 interface to DNF.
+%endif  # %%{with python2}
 
 %if %{with python3}
 %package -n python3-%{name}
-Summary:        Python 3 interface to DNF.
-%{?system_python_abi}
+Summary:        Python 3 interface to DNF
 %{?python_provide:%python_provide python3-%{name}}
 BuildRequires:  python3-devel
 BuildRequires:  python3-hawkey >= %{hawkey_version}
+BuildRequires:  python3-libdnf >= %{hawkey_version}
 BuildRequires:  python3-iniparse
 BuildRequires:  python3-libcomps >= %{libcomps_version}
 BuildRequires:  python3-librepo >= %{librepo_version}
 BuildRequires:  python3-nose
 BuildRequires:  python3-gpg
 Requires:       python3-gpg
-BuildRequires:  rpm-python3 >= %{rpm_version}
-Requires:       %{name}-conf = %{version}-%{release}
+Requires:       %{name}-data = %{version}-%{release}
+%if 0%{?fedora} || 0%{?centos}
 Requires:       deltarpm
+%endif
 Requires:       python3-hawkey >= %{hawkey_version}
+Requires:       python3-libdnf >= %{hawkey_version}
 Requires:       python3-iniparse
 Requires:       python3-libcomps >= %{libcomps_version}
 Requires:       python3-librepo >= %{librepo_version}
+BuildRequires:  python3-rpm >= %{rpm_version}
+Requires:       python3-rpm >= %{rpm_version}
 %if 0%{?rhel} && 0%{?rhel} <= 7
 Requires:       rpm-plugin-systemd-inhibit
 %else
 Recommends:     rpm-plugin-systemd-inhibit
 %endif
-Requires:       rpm-python3 >= %{rpm_version}
-# dnf-langpacks package is retired in F25
-# to have clean upgrade path for dnf-langpacks
-Obsoletes:      python3-dnf-langpacks < %{dnf_langpacks_ver}
 
 %description -n python3-%{name}
 Python 3 interface to DNF.
 %endif
 
 %package automatic
-Summary:        Alternative CLI to "dnf upgrade" suitable for automatic, regular execution.
+Summary:        %{pkg_summary} - automated upgrades
 BuildRequires:  systemd
 Requires:       %{name} = %{version}-%{release}
-Requires(post):   systemd
-Requires(preun):  systemd
-Requires(postun): systemd
+%{?systemd_requires}
 
 %description automatic
-Alternative CLI to "dnf upgrade" suitable for automatic, regular execution.
+Systemd units that can periodically download package upgrades and apply them.
+
 
 %prep
 %autosetup
-mkdir build
-%if %{with python3}
+mkdir build-py2
 mkdir build-py3
-%endif
+
 
 %build
-pushd build
-  %cmake ..
-  %make_build
-  make doc-man
-popd
-%if %{with python3}
-pushd build-py3
-  %cmake .. -DPYTHON_DESIRED:str=3 -DWITH_MAN=0
-  %make_build
-popd
+%if %{with python2}
+    pushd build-py2
+    %cmake .. -DPYTHON_DESIRED:str=2
+    %make_build
+    make doc-man
+    popd
 %endif
+
+%if %{with python3}
+    pushd build-py3
+    %cmake .. -DPYTHON_DESIRED:str=3
+    %make_build
+    make doc-man
+    popd
+%endif
+
 
 %install
-pushd build
-  %make_install
-popd
-%if %{with python3}
-pushd build-py3
-  %make_install
-popd
+%if %{with python2}
+    pushd build-py2
+    %make_install
+    popd
 %endif
-%find_lang %{name}
 
+%if %{with python3}
+    pushd build-py3
+    %make_install
+    popd
+%endif
+
+%find_lang %{name}
+mkdir -p %{buildroot}%{confdir}/vars
 mkdir -p %{buildroot}%{pluginconfpath}/
+%if %{with python2}
 mkdir -p %{buildroot}%{py2pluginpath}/
+%endif
 %if %{with python3}
 mkdir -p %{buildroot}%{py3pluginpath}/__pycache__/
 %endif
+ln -sr  %{buildroot}%{confdir}/%{name}.conf %{buildroot}%{_sysconfdir}/yum.conf
 mkdir -p %{buildroot}%{_localstatedir}/log/
 mkdir -p %{buildroot}%{_var}/cache/dnf/
 touch %{buildroot}%{_localstatedir}/log/%{name}.log
 %if %{with python3}
-%{?system_python_abi:sed -i 's|#!%{__python3}|#!%{_libexecdir}/system-python|' %{buildroot}%{_bindir}/dnf-3}
 ln -sr %{buildroot}%{_bindir}/dnf-3 %{buildroot}%{_bindir}/dnf
 mv %{buildroot}%{_bindir}/dnf-automatic-3 %{buildroot}%{_bindir}/dnf-automatic
 ln -sr  %{buildroot}%{_bindir}/dnf-3 %{buildroot}%{_bindir}/yum
@@ -251,15 +302,20 @@ ln -sr  %{buildroot}%{_bindir}/dnf-2 %{buildroot}%{_bindir}/yum
 %endif
 rm -vf %{buildroot}%{_bindir}/dnf-automatic-*
 
+
 %check
-pushd build
-  ctest -VV
-popd
-%if %{with python3}
-pushd build-py3
-  ctest -VV
-popd
+%if %{with python2}
+    pushd build-py2
+    ctest -VV
+    popd
 %endif
+
+%if %{with python3}
+    pushd build-py3
+    ctest -VV
+    popd
+%endif
+
 
 %post
 %systemd_post dnf-makecache.timer
@@ -270,20 +326,25 @@ popd
 %postun
 %systemd_postun_with_restart dnf-makecache.timer
 
+
 %post automatic
+%systemd_post dnf-automatic.timer
 %systemd_post dnf-automatic-notifyonly.timer
 %systemd_post dnf-automatic-download.timer
 %systemd_post dnf-automatic-install.timer
 
 %preun automatic
+%systemd_preun dnf-automatic.timer
 %systemd_preun dnf-automatic-notifyonly.timer
 %systemd_preun dnf-automatic-download.timer
 %systemd_preun dnf-automatic-install.timer
 
 %postun automatic
+%systemd_postun_with_restart dnf-automatic.timer
 %systemd_postun_with_restart dnf-automatic-notifyonly.timer
 %systemd_postun_with_restart dnf-automatic-download.timer
 %systemd_postun_with_restart dnf-automatic-install.timer
+
 
 %files -f %{name}.lang
 %{_bindir}/%{name}
@@ -300,12 +361,13 @@ popd
 %{_unitdir}/%{name}-makecache.timer
 %{_var}/cache/%{name}/
 
-%files conf
+%files data
 %license COPYING PACKAGE-LICENSING
 %doc AUTHORS README.rst
 %dir %{confdir}
 %dir %{pluginconfpath}
 %dir %{confdir}/protected.d
+%dir %{confdir}/vars
 %config(noreplace) %{confdir}/%{name}.conf
 %config(noreplace) %{confdir}/protected.d/%{name}.conf
 %config(noreplace) %{_sysconfdir}/logrotate.d/%{name}
@@ -322,23 +384,37 @@ popd
 %{_tmpfilesdir}/%{name}.conf
 %{_sysconfdir}/libreport/events.d/collect_dnf.conf
 
-%if 0%{?rhel} && 0%{?rhel} <= 7
-%files -n yum4
-%{_bindir}/yum4
-%{_mandir}/man8/yum4.8*
-%exclude %{_mandir}/man8/yum.8*
-
-%else
-%files yum
+%files -n %{yum_subpackage_name}
+%if "%{yum_subpackage_name}" == "yum"
 %{_bindir}/yum
+%{_mandir}/man8/yum.8*
+%{_sysconfdir}/yum.conf
+%{_mandir}/man5/yum.conf.5.*
 %{_mandir}/man8/yum.8*
 %endif
 
+%if "%{yum_subpackage_name}" == "yum4"
+%{_bindir}/yum4
+%{_mandir}/man8/yum4.8*
+%exclude %{_sysconfdir}/yum.conf
+%exclude %{_mandir}/man5/yum.conf.5.*
+%exclude %{_mandir}/man8/yum.8*
+%endif
+
+%if "%{yum_subpackage_name}" == "%{name}-yum"
+%{_sysconfdir}/yum.conf
+%{_bindir}/yum
+%{_mandir}/man5/yum.conf.5*
+%{_mandir}/man8/yum.8*
+%endif
+
+%if %{with python2}
 %files -n python2-%{name}
 %{_bindir}/%{name}-2
 %exclude %{python2_sitelib}/%{name}/automatic
 %{python2_sitelib}/%{name}/
 %dir %{py2pluginpath}
+%endif
 
 %if %{with python3}
 %files -n python3-%{name}
@@ -353,6 +429,8 @@ popd
 %{_bindir}/%{name}-automatic
 %config(noreplace) %{confdir}/automatic.conf
 %{_mandir}/man8/%{name}.automatic.8*
+%{_unitdir}/%{name}-automatic.service
+%{_unitdir}/%{name}-automatic.timer
 %{_unitdir}/%{name}-automatic-notifyonly.service
 %{_unitdir}/%{name}-automatic-notifyonly.timer
 %{_unitdir}/%{name}-automatic-download.service
@@ -366,6 +444,49 @@ popd
 %endif
 
 %changelog
+* Wed Oct 18 2017 Igor Gnatenko <ignatenko@redhat.com> - 2.7.5-1
+- Improve performance for excludes and includes handling (RHBZ #1500361)
+- Fixed problem of handling checksums for local repositories (RHBZ #1502106)
+- Fix traceback when using dnf.Base.close() (RHBZ #1503575)
+
+* Mon Oct 16 2017 Jaroslav Mracek <jmracek@redhat.com> - 2.7.4-1
+- Update to 2.7.4-1
+- Enhanced performance for excludes and includes handling
+- Solved memory leaks at time of closing of dnf.Base()
+- Resolves: rhbz#1480979 - I thought it abnormal that dnf crashed.
+- Resolves: rhbz#1461423 - Memory leak in python-dnf
+- Resolves: rhbz#1499564 - dnf list installed crashes
+- Resolves: rhbz#1499534 - dnf-2 is much slower than dnf-1 when handling groups
+- Resolves: rhbz#1499623 - Mishandling stderr vs stdout (dnf search, dnf repoquery)
+
+* Fri Oct 06 2017 Igor Gnatenko <ignatenko@redhat.com> - 2.7.3-1
+- Fix URL detection (RHBZ #1472847)
+- Do not remove downloaded files with --destdir option (RHBZ #1498426)
+- Fix handling of conditional packages in comps (RHBZ #1427144)
+
+* Mon Oct 02 2017 Jaroslav Mracek <jmracek@redhat.com> - 2.7.2-1
+- Update to 2.7.2-1
+- Added new option ``--comment=<comment>`` that adds a comment to transaction in history
+- :meth:`dnf.Base.pre_configure_plugin` configure plugins by running their pre_configure() method
+- Added pre_configure() methotd for plugins and commands to configure dnf before repos are loaded
+- Resolves: rhbz#1421478 - dnf repository-packages: error: unrecognized arguments: -x rust-rpm-macros
+- Resolves: rhbz#1491560 - 'dnf check' reports spurious "has missing requires of" errors
+- Resolves: rhbz#1465292 - DNF remove protected duplicate package
+- Resolves: rhbz#1279001 - [RFE] Missing dnf --downloaddir option
+- Resolves: rhbz#1212341 - [RFE] Allow plugins to override the core configuration
+- Resolves: rhbz#1299482 - mock --init fails with message "Failed calculating RPMDB checksum"
+- Resolves: rhbz#1488398 - dnf upstream tests failures on f26
+- Resolves: rhbz#1192811 - dnf whatprovides should show which provides matched a pattern
+- Resolves: rhbz#1288845 - "dnf provides" wildcard matching is unreliable (not all packages with matches listed)
+- Resolves: rhbz#1473933 - [abrt] dnf-automatic: resolved(): rpm_conf.py:58:resolved:AttributeError: 'Rpmconf' object has no attribute '_interactive'
+- Resolves: rhbz#1237349 - dnf autoremove not removing what dnf list extras shows
+- Resolves: rhbz#1470050 - the 'priority=' option in /etc/yum.repos.d/*.repo is not respected
+- Resolves: rhbz#1347927 - dnf --cacheonly downloads packages
+- Resolves: rhbz#1478115 - [abrt] dnf: _hcmd_undo(): __init__.py:888:_hcmd_undo:IndexError: list index out of range
+- Resolves: rhbz#1461171 -  RFE: support --advisory= with install
+- Resolves: rhbz#1448874 - "dnf needs-restarting" vanished from bash completion
+- Resolves: rhbz#1495116 - Dnf version fails with traceback in container
+
 * Mon Aug 07 2017 Jaroslav Mracek <jmracek@redhat.com> 2.6.3-1
 - Fix problem with dnf.Package().remote_location() (RhBug:1476215) (Jaroslav
   Mracek)

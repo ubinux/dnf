@@ -28,8 +28,10 @@ from functools import reduce
 import dnf
 import dnf.const
 import dnf.pycomp
+import errno
 import itertools
 import librepo
+import locale
 import logging
 import os
 import pwd
@@ -90,7 +92,11 @@ def _urlopen(url, conf=None, repo=None, mode='w+b', **kwargs):
     else:
         handle = _non_repo_handle(conf)
     try:
+        if repo and handle.progresscb:
+            repo._md_pload.start(repo.name or repo.id or 'unknown')
         librepo.download_url(url, fo.fileno(), handle)
+        if repo and handle.progresscb:
+            repo._md_pload.end()
     except librepo.LibrepoException as e:
         raise IOError(e.args[1])
     fo.seek(0)
@@ -119,7 +125,7 @@ def ensure_dir(dname):
     try:
         os.makedirs(dname, mode=0o755)
     except OSError as e:
-        if e.errno != os.errno.EEXIST or not os.path.isdir(dname):
+        if e.errno != errno.EEXIST or not os.path.isdir(dname):
             raise e
 
 def empty(iterable):
@@ -144,7 +150,10 @@ def file_timestamp(fn):
     return os.stat(fn).st_mtime
 
 def get_effective_login():
-    return pwd.getpwuid(os.geteuid())[0]
+    try:
+        return pwd.getpwuid(os.geteuid())[0]
+    except KeyError:
+        return "UID: %s" % os.geteuid()
 
 def get_in(dct, keys, not_found):
     """Like dict.get() for nested dicts."""
@@ -224,6 +233,10 @@ def mapall(fn, *seq):
 def normalize_time(timestamp):
     """Convert time into locale aware datetime string object."""
     t = time.strftime("%c", time.localtime(timestamp))
+    if not dnf.pycomp.PY3:
+        current_locale_setting = locale.getlocale()[1]
+        if current_locale_setting:
+            t = t.decode(current_locale_setting)
     return t
 
 def on_ac_power():

@@ -17,16 +17,12 @@
 from __future__ import print_function, absolute_import
 from __future__ import unicode_literals
 from dnf.i18n import _, ucd
-from dnf.pycomp import basestring
 import dnf.transaction
 import dnf.util
 import rpm
 import os
-import fcntl
-import time
 import logging
 import sys
-from . import misc
 import tempfile
 import traceback
 
@@ -152,14 +148,21 @@ class LoggingTransactionDisplay(ErrorTransactionDisplay):
     def filelog(self, package, action):
         # If the action is not in the fileaction list then dump it as a string
         # hurky but, sadly, not much else
-        process = self.fileaction[action]
-        if process is None:
-            return
-        msg = '%s: %s' % (process, package)
+        if not dnf.util.is_string_type(action):
+            action = self.fileaction[action]
+            if action is None:
+                return
+        msg = '%s: %s' % (action, package)
         self.rpm_logger.info(msg)
 
 class RPMTransaction(object):
     def __init__(self, base, test=False, displays=()):
+        self.ts_action = {TransactionDisplay.PKG_DOWNGRADE: 'Downgrading',
+                          TransactionDisplay.PKG_ERASE: 'Erasing',
+                          TransactionDisplay.PKG_INSTALL: 'Installing',
+                          TransactionDisplay.PKG_REINSTALL: 'Reinstalling',
+                          TransactionDisplay.PKG_UPGRADE: 'Upgrading'}
+
         if not displays:
             displays = [ErrorTransactionDisplay()]
         self.displays = displays
@@ -175,19 +178,10 @@ class RPMTransaction(object):
         self.filelog = False
 
         self._setupOutputLogging(base.conf.rpmverbosity)
-        self._ts_done = None
         self._te_list = []
         # Index in _te_list of the transaction element being processed (for use
         # in callbacks)
         self._te_index = 0
-
-    def _fdSetCloseOnExec(self, fd):
-        """ Set the close on exec. flag for a filedescriptor. """
-        flag = fcntl.FD_CLOEXEC
-        current_flags = fcntl.fcntl(fd, fcntl.F_GETFD)
-        if current_flags & flag:
-            return
-        fcntl.fcntl(fd, fcntl.F_SETFD, current_flags | flag)
 
     def _setupOutputLogging(self, rpmverbosity="info"):
         # UGLY... set up the transaction to record output from scriptlets
@@ -262,156 +256,6 @@ class RPMTransaction(object):
                         obsoleted_tsi = tsi
         return obsoleted, obsoleted_state, obsoleted_tsi
 
-    def _fn_rm_installroot(self, filename):
-        """ Remove the installroot from the filename. """
-        # to handle us being inside a chroot at this point
-        # we hand back the right path to those 'outside' of the chroot() calls
-        # but we're using the right path inside.
-        if self.base.conf.installroot == '/':
-            return filename
-
-        return filename.replace(os.path.normpath(self.base.conf.installroot),'')
-
-    def ts_done_open(self):
-        """ Open the transaction done file, must be started outside the
-            chroot. """
-
-        if self.test:
-            return False
-        if self._ts_done is not None:
-            return True
-
-        self.ts_done_fn = '%s/transaction-done.%s' % (self.base.conf.persistdir,
-                                                      self._ts_time)
-        ts_done_fn = self._fn_rm_installroot(self.ts_done_fn)
-
-        try:
-            self._ts_done = open(ts_done_fn, 'w')
-        except (IOError, OSError) as e:
-            for display in self.displays:
-                display.error('could not open ts_done file: %s' % e)
-            self._ts_done = None
-            return False
-        self._fdSetCloseOnExec(self._ts_done.fileno())
-        return True
-
-    def ts_done_write(self, msg):
-        """ Write some data to the transaction done file. """
-        if self._ts_done is None:
-            return
-
-        try:
-            self._ts_done.write(msg)
-            self._ts_done.flush()
-        except (IOError, OSError) as e:
-            #  Having incomplete transactions is probably worse than having
-            # nothing.
-            for display in self.displays:
-                display.error('could not write to ts_done file: %s' % e)
-            self._ts_done = None
-            misc.unlink_f(self.ts_done_fn)
-
-    def ts_done(self, package, action):
-        """writes out the portions of the transaction which have completed"""
-
-        if not self.ts_done_open(): return
-
-        # walk back through self._te_tuples
-        # make sure the package and the action make some kind of sense
-        # write it out and pop(0) from the list
-
-        # make sure we have a list to work from
-        if len(self._te_tuples) == 0:
-            # if we don't then this is pretrans or postrans or a trigger
-            # either way we have to respond correctly so just return and don't
-            # emit anything
-            return
-
-        (t,e,n,v,r,a) = self._te_tuples[0] # what we should be on
-
-        # make sure we're in the right action state
-        msg = 'ts_done state is %s %s should be %s %s' % (package, action, t, n)
-        if action in TS_REMOVE_STATES:
-            if t != 'erase':
-                for display in self.displays:
-                    display.filelog(package, msg)
-        if action in TS_INSTALL_STATES:
-            if t != 'install':
-                for display in self.displays:
-                    display.filelog(package, msg)
-
-        # check the pkg name out to make sure it matches
-        if isinstance(package, basestring):
-            name = package
-        else:
-            name = package.name
-
-        if n != name:
-            msg = 'ts_done name in te is %s should be %s' % (n, package)
-            for display in self.displays:
-                display.filelog(package, msg)
-
-        # hope springs eternal that this isn't wrong
-        msg = '%s %s:%s-%s-%s.%s\n' % (t,e,n,v,r,a)
-
-        self.ts_done_write(msg)
-        self._te_tuples.pop(0)
-
-    def ts_all(self):
-        """write out what our transaction will do"""
-
-        # save the transaction elements into a list so we can run across them
-        if not hasattr(self, '_te_tuples'):
-            self._te_tuples = []
-
-        for te in self.base._ts:
-            n = te.N()
-            a = te.A()
-            v = te.V()
-            r = te.R()
-            e = te.E()
-            if e is None:
-                e = '0'
-            if te.Type() == 1:
-                t = 'install'
-            elif te.Type() == 2:
-                t = 'erase'
-            else:
-                t = te.Type()
-
-            # save this in a list
-            self._te_tuples.append((t,e,n,v,r,a))
-
-        # write to a file
-        self._ts_time = time.strftime('%Y-%m-%d.%H:%M.%S')
-        tsfn = '%s/transaction-all.%s' % (self.base.conf.persistdir, self._ts_time)
-        self.ts_all_fn = tsfn
-        tsfn = self._fn_rm_installroot(tsfn)
-
-        try:
-            if not os.path.exists(os.path.dirname(tsfn)):
-                os.makedirs(os.path.dirname(tsfn)) # make the dir,
-            fo = open(tsfn, 'w')
-        except (IOError, OSError) as e:
-            for display in self.displays:
-                display.error('could not open ts_all file: %s' % e)
-            self._ts_done = None
-            return
-
-        try:
-            for (t,e,n,v,r,a) in self._te_tuples:
-                msg = "%s %s:%s-%s-%s.%s\n" % (t,e,n,v,r,a)
-                fo.write(msg)
-            fo.flush()
-            fo.close()
-        except (IOError, OSError) as e:
-            #  Having incomplete transactions is probably worse than having
-            # nothing.
-            for display in self.displays:
-                display.error('could not write to ts_all file: %s' % e)
-            misc.unlink_f(tsfn)
-            self._ts_done = None
-
     def callback(self, what, amount, total, key, client_data):
         try:
             if isinstance(key, str):
@@ -419,14 +263,14 @@ class RPMTransaction(object):
             if what == rpm.RPMCALLBACK_TRANS_START:
                 self._transStart(total)
             elif what == rpm.RPMCALLBACK_TRANS_STOP:
-                self._transStop()
+                pass
             elif what == rpm.RPMCALLBACK_TRANS_PROGRESS:
                 self._trans_progress(amount, total)
             elif what == rpm.RPMCALLBACK_ELEM_PROGRESS:
                 # This callback type is issued every time the next transaction
                 # element is about to be processed by RPM, before any other
                 # callbacks are issued.  "amount" carries the index of the element.
-                self._elemProgress(amount)
+                self._elemProgress(key, amount)
             elif what == rpm.RPMCALLBACK_INST_OPEN_FILE:
                 return self._instOpenFile(key)
             elif what == rpm.RPMCALLBACK_INST_CLOSE_FILE:
@@ -458,22 +302,21 @@ class RPMTransaction(object):
         self.total_actions = total
         if self.test: return
         self.trans_running = True
-        self.ts_all() # write out what transaction will do
-        self.ts_done_open()
         self._te_list = list(self.base._ts)
-
-    def _transStop(self):
-        if self._ts_done is not None:
-            self._ts_done.close()
 
     def _trans_progress(self, amount, total):
         action = TransactionDisplay.TRANS_PREPARATION
         for display in self.displays:
             display.progress('', action, amount + 1, total, 1, 1)
 
-    def _elemProgress(self, index):
+    def _elemProgress(self, key, index):
         self._te_index = index
         self.complete_actions += 1
+        if not self.test:
+            pkg, state, tsi = self._extract_cbkey(key)
+            action = TransactionDisplay.ACTION_FROM_OP_TYPE[tsi.op_type]
+            for display in self.displays:
+                display.filelog(pkg, self.ts_action[action])
 
     def _instOpenFile(self, key):
         self.lastmsg = None
@@ -504,8 +347,6 @@ class RPMTransaction(object):
         self._scriptout()
         pid = self.base.history.pkg2pid(pkg)
         self.base.history.trans_data_pid_end(pid, state)
-        # :dead
-        # self.ts_done(txmbr.po, txmbr.output_state)
 
         if self.complete_actions == self.total_actions:
             # RPM doesn't explicitly report when post-trans phase starts
@@ -553,23 +394,10 @@ class RPMTransaction(object):
 
         if state is not None:
             self._scriptout()
-
-            #  Note that we are currently inside the chroot, which makes
-            # sqlite panic when it tries to open it's journal file.
-            # So let's have some "fun" and workaround that:
-            _do_chroot = False
-            if _do_chroot and self.base.conf.installroot != '/':
-                os.chroot(".")
             pid   = self.base.history.pkg2pid(pkg)
             self.base.history.trans_data_pid_end(pid, state)
-            if _do_chroot and self.base.conf.installroot != '/':
-                os.chroot(self.base.conf.installroot)
-            # :dead
-            # self.ts_done(txmbr.po, txmbr.output_state)
         else:
             self._scriptout()
-            # :dead
-            # self.ts_done(name, action)
 
     def _cpioError(self, key):
         # In the case of a remove, we only have a name, not a tsi:
@@ -597,12 +425,8 @@ class RPMTransaction(object):
         else:
             name = 'None'
 
-        if total:
-            msg = ("Error in %s scriptlet in rpm package %s" %
-                   (scriptlet_name, name))
-        else:
-            msg = ("Non-fatal %s scriptlet failure in rpm package %s" %
-                   (scriptlet_name, name))
+        msg = ("Error in %s scriptlet in rpm package %s" % (scriptlet_name, name))
+
         for display in self.displays:
             display.error(msg)
 

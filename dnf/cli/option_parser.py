@@ -97,10 +97,10 @@ class OptionParser(argparse.ArgumentParser):
         def __call__(self, parser, namespace, values, opt_str):
             vals = values.split('=')
             if len(vals) > 2:
-                logger.warning("Setopt argument has multiple values: %s", values)
+                logger.warning(_("Setopt argument has multiple values: %s"), values)
                 return
             if len(vals) < 2:
-                logger.warning("Setopt argument has no value: %s", values)
+                logger.warning(_("Setopt argument has no value: %s"), values)
                 return
             k, v = vals
             period = k.find('.')
@@ -122,7 +122,10 @@ class OptionParser(argparse.ArgumentParser):
             setattr(namespace, "grp_specs", [])
             setattr(namespace, "pkg_specs", [])
             for value in values:
+                schemes = dnf.pycomp.urlparse.urlparse(value)[0]
                 if value.endswith('.rpm'):
+                    namespace.filenames.append(value)
+                elif schemes and schemes in ('http', 'ftp', 'file', 'https'):
                     namespace.filenames.append(value)
                 elif value.startswith('@'):
                     namespace.grp_specs.append(value[1:])
@@ -291,6 +294,8 @@ class OptionParser(argparse.ArgumentParser):
         main_parser.add_argument("--downloadonly", dest="downloadonly",
                                  action="store_true", default=False,
                                  help=_("only download packages"))
+        main_parser.add_argument("--comment", dest="comment", default=None,
+                                 help=_("add a comment to transaction"))
         # Updateinfo options...
         main_parser.add_argument("--bugfix", action="store_true",
                                  help=_("Include bugfix relevant packages, "

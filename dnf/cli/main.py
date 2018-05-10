@@ -76,7 +76,7 @@ def main(args, conf_class=Conf, cli_class=Cli, option_parser_class=OptionParser)
     except IOError as e:
         return ex_IOError(e)
     except KeyboardInterrupt as e:
-        logger.critical('{}: {}'.format(type(e).__name__, "Terminated."))
+        logger.critical('{}: {}'.format(type(e).__name__, _("Terminated.")))
         return 1
 
 
@@ -127,7 +127,7 @@ def cli_run(cli, base):
                 msg = _("(try to add '%s' to command line to replace conflicting "
                         "packages") % "--allowerasing"
                 if cli.base.conf.strict:
-                    msg += _(" or '%s' to skip uninstalable packages)") % "--skip-broken"
+                    msg += _(" or '%s' to skip uninstallable packages)") % "--skip-broken"
                 else:
                     msg += ")"
                 logger.info(msg)

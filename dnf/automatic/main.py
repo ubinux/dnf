@@ -28,7 +28,7 @@ import dnf.cli
 import dnf.cli.cli
 import dnf.cli.output
 import dnf.conf
-import dnf.conf.parser
+import libdnf.conf as cfg
 import dnf.const
 import dnf.exceptions
 import dnf.util
@@ -71,15 +71,19 @@ def parse_arguments(args):
     parser = argparse.ArgumentParser()
     parser.add_argument('conf_path', nargs='?', default=dnf.const.CONF_AUTOMATIC_FILENAME)
     parser.add_argument('--timer', action='store_true')
-    parser.add_argument('--installupdates', action='store_true')
-    parser.add_argument('--downloadupdates', action='store_true')
+    parser.add_argument('--installupdates', dest='installupdates', action='store_true')
+    parser.add_argument('--downloadupdates', dest='downloadupdates', action='store_true')
+    parser.add_argument('--no-installupdates', dest='installupdates', action='store_false')
+    parser.add_argument('--no-downloadupdates', dest='downloadupdates', action='store_false')
+    parser.set_defaults(installupdates=None)
+    parser.set_defaults(downloadupdates=None)
 
     return parser.parse_args(args), parser
 
 
 class AutomaticConfig(object):
-    def __init__(self, filename=None, downloadupdates=False,
-                 installupdates=False):
+    def __init__(self, filename=None, downloadupdates=None,
+                 installupdates=None):
         if not filename:
             filename = dnf.const.CONF_AUTOMATIC_FILENAME
         self.commands = CommandsConfig()
@@ -91,19 +95,24 @@ class AutomaticConfig(object):
 
         if downloadupdates:
             self.commands.download_updates = True
+        elif downloadupdates is False:
+            self.commands.download_updates = False
         if installupdates:
             self.commands.apply_updates = True
+        elif installupdates is False:
+            self.commands.apply_updates = False
 
         self.commands.imply()
         self.filename = filename
 
     def _load(self, filename):
-        parser = iniparse.compat.ConfigParser()
-        config_pp = dnf.conf.parser.ConfigPreProcessor(filename)
+        parser = cfg.ConfigParser()
         try:
-            parser.readfp(config_pp)
-        except iniparse.compat.ParsingError as e:
-            raise dnf.exceptions.ConfigError("Parsing file failed: %s" % e)
+            parser.read(filename)
+        except RuntimeError as e:
+            raise dnf.exceptions.ConfigError('Parsing file "%s" failed: %s' % (filename, e))
+        except IOError as e:
+            logger.warning(e)
 
         self.commands._populate(parser, 'commands', filename, dnf.conf.PRIO_AUTOMATICCONFIG)
         self.email._populate(parser, 'email', filename, dnf.conf.PRIO_AUTOMATICCONFIG)
@@ -180,14 +189,16 @@ def main(args):
             cli._read_conf_file()
             conf.update_baseconf(base.conf)
             base.init_plugins(cli=cli)
-            logger.debug('Started dnf-automatic.')
+            logger.debug(_('Started dnf-automatic.'))
 
             if opts.timer:
                 sleeper = random.randint(0, conf.commands.random_sleep)
-                logger.debug('Sleep for %s seconds', sleeper)
+                logger.debug(_('Sleep for %s seconds'), sleeper)
                 time.sleep(sleeper)
 
+            base.pre_configure_plugins()
             base.read_all_repos()
+            base.configure_plugins()
             base.fill_sack()
             upgrade(base, conf.commands.upgrade_type)
             base.resolve()
@@ -220,7 +231,7 @@ def main(args):
 
 def upgrade(base, upgrade_type):
     if upgrade_type == 'security':
-        base._update_security_filters['upgrade'] = [base.sack.query().filter(
+        base._update_security_filters['upgrade'] = [base.sack.query().filterm(
             advisory_type='security')]
         base.upgrade_all()
     elif upgrade_type == 'default':

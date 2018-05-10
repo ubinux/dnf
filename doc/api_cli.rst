@@ -1,5 +1,5 @@
 ..
-  Copyright (C) 2014-2015  Red Hat, Inc.
+  Copyright (C) 2014-2018 Red Hat, Inc.
 
   This copyrighted material is made available to anyone wishing to use,
   modify, copy, or redistribute it subject to the terms and conditions of
@@ -89,6 +89,12 @@ When packaging your custom command, we recommend you to define a virtual provide
     Command constructor which can be overridden. The constructor is called during
     CLI configure phase when one of the command's aliases is parsed from `dnf`
     commandline. `cli` is an instance of :class:`dnf.cli.Cli`.
+
+  .. method:: pre_configure()
+
+    Perform any pre-configuration on the command itself and on the CLI. Typically, the command
+    implements this call to set up releasever or enable/disable repository. This method is called
+    before configuration of repos.
 
   .. method:: configure()
 

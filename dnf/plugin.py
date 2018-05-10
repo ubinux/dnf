@@ -22,19 +22,21 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from dnf.i18n import _
-import dnf.logging
-import dnf.pycomp
-import dnf.util
 import fnmatch
 import glob
 import importlib
 import iniparse.compat
+import iniparse.configparser
 import inspect
 import logging
 import operator
 import os
 import sys
+
+import dnf.logging
+import dnf.pycomp
+import dnf.util
+from dnf.i18n import _
 
 logger = logging.getLogger('dnf')
 
@@ -53,13 +55,20 @@ class Plugin(object):
         parser = iniparse.compat.ConfigParser()
         name = cls.config_name if cls.config_name else cls.name
         files = ['%s/%s.conf' % (path, name) for path in conf.pluginconfpath]
-        parser.read(files)
+        try:
+            parser.read(files)
+        except iniparse.configparser.ParsingError as e:
+            raise dnf.exceptions.ConfigError(_("Parsing file failed: %s") % e)
         return parser
 
     def __init__(self, base, cli):
         # :api
         self.base = base
         self.cli = cli
+
+    def pre_config(self):
+        # :api
+        pass
 
     def config(self):
         # :api
@@ -118,7 +127,9 @@ class Plugins(object):
         self._check_enabled(conf)
         if len(self.plugin_cls) > 0:
             names = sorted(plugin.name for plugin in self.plugin_cls)
-            logger.debug('Loaded plugins: %s', ', '.join(names))
+            logger.debug(_('Loaded plugins: %s'), ', '.join(names))
+
+    _run_pre_config = _caller('pre_config')
 
     _run_config = _caller('config')
 

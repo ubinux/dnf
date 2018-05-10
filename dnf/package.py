@@ -23,6 +23,8 @@
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
+from dnf.i18n import _
+
 import binascii
 import dnf.rpm
 import dnf.yum.misc
@@ -77,9 +79,13 @@ class Package(hawkey.Package):
 
     @property
     def _from_repo(self):
-        yumdb_info = self.base._yumdb.get_package(self) if self._from_system else {}
-        if 'from_repo' in yumdb_info:
-            return '@'+yumdb_info.from_repo
+        pkgrepo = None
+        if self._from_system:
+            pkgrepo = self.base.history.repo(self)
+        else:
+            pkgrepo = {}
+        if pkgrepo:
+            return '@' + pkgrepo
         return self.reponame
 
     @property
@@ -127,11 +133,10 @@ class Package(hawkey.Package):
 
     @property
     def _pkgid(self):
-        try:
-            (_, chksum) = self.hdr_chksum
-            return binascii.hexlify(chksum)
-        except AttributeError:
+        if self.hdr_chksum is None:
             return None
+        (_, chksum) = self.hdr_chksum
+        return binascii.hexlify(chksum)
 
     @property # yum compatibility attribute
     def idx(self):
@@ -250,6 +255,8 @@ class Package(hawkey.Package):
         """ Return the chksum type and chksum string how the legacy yum expects
             it.
         """
+        if self._chksum is None:
+            return (None, None)
         (chksum_type, chksum) = self._chksum
         return (hawkey.chksum_name(chksum_type), binascii.hexlify(chksum).decode())
 
@@ -263,7 +270,7 @@ class Package(hawkey.Package):
         real_sum = dnf.yum.misc.checksum(chksum_type, self.localPkg(),
                                          datasize=self._size)
         if real_sum != chksum:
-            logger.debug('%s: %s check failed: %s vs %s',
+            logger.debug(_('%s: %s check failed: %s vs %s'),
                          self, chksum_type, real_sum, chksum)
             return False
         return True

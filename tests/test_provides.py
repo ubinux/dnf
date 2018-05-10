@@ -1,4 +1,6 @@
-# Copyright (C) 2012-2016 Red Hat, Inc.
+# -*- coding: utf-8 -*-
+
+# Copyright (C) 2012-2018 Red Hat, Inc.
 #
 # This copyrighted material is made available to anyone wishing to use,
 # modify, copy, or redistribute it subject to the terms and conditions of
@@ -17,21 +19,23 @@
 
 from __future__ import absolute_import
 from __future__ import unicode_literals
-from tests import support
 
-class ProvidesTest(support.TestCase):
-    def setUp(self):
-        self.base = support.MockBase("main")
+import tests.support
+
+
+class ProvidesTest(tests.support.DnfBaseTestCase):
+
+    REPOS = ['main']
 
     def test_file(self):
-        self.assertLength(self.base.provides("*ais*smile"), 1)
-        self.assertLength(self.base.provides("/raised/smile"), 1)
+        self.assertLength(self.base.provides("*ais*smile")[0], 1)
+        self.assertLength(self.base.provides("/raised/smile")[0], 1)
 
     def test_name(self):
-        self.assertLength(self.base.provides("henry(the_horse)"), 1)
-        self.assertLength(self.base.provides("lotus"), 2)
+        self.assertLength(self.base.provides("henry(the_horse)")[0], 1)
+        self.assertLength(self.base.provides("lotus")[0], 2)
 
     def test_glob(self):
-        self.assertLength(self.base.provides("henry(*)"), 1)
-        self.assertEqual(set(self.base.provides("dup*")), set(self.base.provides('dup')))
-        self.assertEqual(set(self.base.provides(["dup*"])), set(self.base.provides('dup')))
+        self.assertLength(self.base.provides("henry(*)")[0], 1)
+        self.assertEqual(set(self.base.provides("dup*")[0]), set(self.base.provides('dup')[0]))
+        self.assertEqual(set(self.base.provides(["dup*"])[0]), set(self.base.provides('dup')[0]))
