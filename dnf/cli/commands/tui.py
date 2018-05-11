@@ -47,7 +47,7 @@ Install_actions = [("Install", "Choose it to install packages."), \
 
 Custom_actions = [("New", "Install without config file."), \
                   ("Load package file", "Load config file"),  \
-                  ("Samples", "Samples for package list")
+                  ("Reference", "Samples for package list")
                   ]
 
 ACTION_INSTALL     = 0
@@ -74,7 +74,7 @@ ATTENTON_NONE_UPGRADE   = 2
 if "OECORE_NATIVE_SYSROOT" in os.environ:
     NATIVE_SYSROOT = os.environ["OECORE_NATIVE_SYSROOT"]
 else:
-    NATIVE_SYSROOT = "/opt/poky/2.4.2/sysroots/x86_64-pokysdk-linux"
+    NATIVE_SYSROOT = "/opt/poky/2.5/sysroots/x86_64-pokysdk-linux"
 SAMPLE = NATIVE_SYSROOT + "/usr/share/dnf"
 
 logger = logging.getLogger('dnf')
@@ -147,12 +147,12 @@ class TuiCommand(commands.Command):
         f.close()
         return selected_pkgs
 
-    def Save_ConfigFile(self, selected_pkgs):
+    def Save_ConfigFile(self, selected_pkgs, mode):
         save_list = []
         for pkg in selected_pkgs:
             save_list.append(pkg.name)
 
-        f = open(".config", "w")
+        f = open(".config", mode)
         for line in save_list:
             f.write(line + '\n')
         f.close()
@@ -161,8 +161,9 @@ class TuiCommand(commands.Command):
         sample_list = []
         if os.path.isdir(SAMPLE):
             for (root, dirs, filenames) in os.walk(SAMPLE):
-                for filename in filenames:
-                    sample = (filename, filename + " based root file system")
+                filenames.sort()
+                for index in range(len(filenames)):
+                    sample = ("Reference" + str(index+1) + "(" + filenames[index] + " based root file system)", filenames[index] + " based root file system")
                     sample_list.append(sample)
             return (True, sample_list)
         else:
@@ -313,7 +314,6 @@ class TuiCommand(commands.Command):
                             get_text = f.read()
                             config_list = get_text.split('\n')
                             config_list.pop() 
-                            #pkg_str = ' '.join(config_list)
                             stage = STAGE_PROCESS
 
                     else:
@@ -366,7 +366,7 @@ class TuiCommand(commands.Command):
                 #==============================
                 elif stage == STAGE_PACKAGE_SPEC:
                     (result, selected_pkgs_spec, pkgs_temp) = self.PKGINSTWindowCtrl(pkgTypeList, \
-                                                                                pkgs_spec, selected_pkgs_spec)
+                                                                                pkgs_spec, selected_pkgs_spec, custom_type)
                     if result == "b":
                         # back
                         stage = STAGE_PKG_TYPE
@@ -404,7 +404,10 @@ class TuiCommand(commands.Command):
 
                         if self.install_type == ACTION_INSTALL:  #selected_pkgs_spec
                             if custom_type != SAMPLE_INSTALL:
-                                self.Save_ConfigFile(selected_pkgs)
+                                self.Save_ConfigFile(selected_pkgs, "w")
+                                if selected_pkgs_spec:
+                                    self.Save_ConfigFile(selected_pkgs_spec, "a")
+ 
                             for pkg in selected_pkgs_spec:
                                 s_line = ["install", pkg.name]
                                 self.run_dnf_command(s_line)
@@ -477,7 +480,7 @@ class TuiCommand(commands.Command):
                     display_pkgs.remove(pkg)
         return haveUpgrade
 
-    def PKGINSTWindowCtrl(self, pkgTypeList, packages=None, selected_pkgs=[],custom_type=0):
+    def PKGINSTWindowCtrl(self, pkgTypeList, packages=None, selected_pkgs=[], custom_type=0):
         STAGE_SELECT = 1
         STAGE_PKG_TYPE = 2
         STAGE_BACK   = 3
@@ -517,11 +520,11 @@ class TuiCommand(commands.Command):
             sorted(packages)
             sorted(display_pkgs)
         else:
-            pkg_available = copy.copy(ypl.available)
-            pkg_installed = copy.copy(ypl.installed)
-            packages = ypl.installed + ypl.available
-            display_pkgs = pkg_installed + pkg_available
-            #display_pkgs = copy.copy(packages)
+            #pkg_available = copy.copy(ypl.available)
+            #pkg_installed = copy.copy(ypl.installed)
+            #packages = ypl.installed + ypl.available
+            #display_pkgs = pkg_installed + pkg_available
+            display_pkgs = copy.copy(packages)
 
         if self.no_gpl3:
             for pkg in (ypl.installed + ypl.available):
@@ -532,6 +535,7 @@ class TuiCommand(commands.Command):
             packages = copy.copy(display_pkgs) #backup all pkgs
 
         if pkgTypeList != None:
+            string_pattern_in = ("locale", "dev", "doc", "dbg", "staticdev", "ptest")
             for pkgType in pkgTypeList:
                 if pkgType.name == "locale":
                     pkgType_locale = pkgType.status
@@ -573,8 +577,8 @@ class TuiCommand(commands.Command):
             else:
                 display_pkgs = []
 
-            if (self.install_type==ACTION_REMOVE) or (self.install_type==ACTION_UPGRADE) or (self.install_type==ACTION_GET_SOURCE) \
-                                                                               or (self.install_type==ACTION_GET_SPDX) :
+            actions = (ACTION_REMOVE, ACTION_UPGRADE, ACTION_GET_SOURCE, ACTION_GET_SPDX)
+            if self.install_type in actions:
                 for pkg in packages:
                     if pkg not in ypl.installed:
                         if pkg in display_pkgs:
@@ -589,6 +593,9 @@ class TuiCommand(commands.Command):
                     if self.install_type == ACTION_INSTALL     :
                         confirm_type = CONFIRM_INSTALL
                         hkey = HotkeyExitWindow(self.screen, confirm_type)
+                        if custom_type == RECORD_INSTALL:
+                            selected_pkgs = []
+                            selected_pkgs = self.Read_ConfigFile(packages, selected_pkgs)
                         if hkey == "y":
                             return ("n", selected_pkgs, packages)
                         elif hkey == "n":
@@ -599,7 +606,9 @@ class TuiCommand(commands.Command):
                 else:
                     return ("n", selected_pkgs, packages)
         else:
+            #filter the type pkg such as -dev (Round1)
             if self.install_type == ACTION_INSTALL:
+                string_pattern_end = ('-dev', '-doc', '-dbg', '-staticdev', '-ptest')
                 for pkg in packages:
                     if "-locale-" in pkg.name:
                         display_pkgs.remove(pkg)
@@ -607,19 +616,7 @@ class TuiCommand(commands.Command):
                     elif "-localedata-" in pkg.name:
                         display_pkgs.remove(pkg)
                         pkgs_spec.append(pkg)
-                    elif pkg.name.endswith('-dev'):
-                        display_pkgs.remove(pkg)
-                        pkgs_spec.append(pkg)
-                    elif pkg.name.endswith('-doc'):
-                        display_pkgs.remove(pkg)
-                        pkgs_spec.append(pkg)
-                    elif pkg.name.endswith('-dbg'):
-                        display_pkgs.remove(pkg)
-                        pkgs_spec.append(pkg)
-                    elif pkg.name.endswith('-staticdev'):
-                        display_pkgs.remove(pkg)
-                        pkgs_spec.append(pkg)
-                    elif pkg.name.endswith('-ptest'):
+                    elif pkg.name.endswith(string_pattern_end):
                         display_pkgs.remove(pkg)
                         pkgs_spec.append(pkg)
 
