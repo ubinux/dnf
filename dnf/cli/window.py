@@ -654,16 +654,16 @@ def PKGINSTActionWindow(insScreen, lstSubject, iPosition):
 #    insPKGINSTXmlinfo : xml information
 #    insPKGINSTPkginfo : package information
 #    iType             : select type (first -1)
-#
+#    group_hotkey      : group_hotkey
 # Output:
 #    int  : select type
 # ------------------------------------------------------------
-def PKGCUSActionWindowCtrl(insScreen, lstSubject, iType):
+def PKGCUSActionWindowCtrl(insScreen, lstSubject, iType, group_hotkey=False):
 
     type = iType
 
     while True:
-        (hkey, type) = PKGCUSActionWindow(insScreen, lstSubject, type)
+        (hkey, type) = PKGCUSActionWindow(insScreen, lstSubject, type, group_hotkey)
 
         if hkey == "b" :
             # back
@@ -687,6 +687,12 @@ def PKGCUSActionWindowCtrl(insScreen, lstSubject, iType):
                     StopHotkeyScreen(insScreen)
                     insScreen = None
                 sys.exit(0)
+      
+        if group_hotkey == True:
+            if hkey == "g":
+                # groupinfo switch
+                return (hkey, type)
+
 
 # ------------------------------------------------------------
 # def PKGCUSActionWindow()
@@ -699,11 +705,12 @@ def PKGCUSActionWindowCtrl(insScreen, lstSubject, iType):
 #      [ str ]
 #        str : subject of each install type
 #   iPosition  : current entry position
+#   group_hotkey  : show group_hotkey
 # Output:
 #   str   : pressed hotkey "ENTER", " ", "i", or "x"
 #   int   : position
 # ------------------------------------------------------------
-def PKGCUSActionWindow(insScreen, lstSubject, iPosition):
+def PKGCUSActionWindow(insScreen, lstSubject, iPosition, group_hotkey=False):
 
     # Create CheckboxTree instance
     (main_width, main_height) = GetHotKeyMainSize(insScreen)
@@ -727,7 +734,11 @@ def PKGCUSActionWindow(insScreen, lstSubject, iPosition):
         li.setCurrent(num_subject - 1)
     # Create Text instance
     t1 = snack.Textbox(main_width, 1, "-" * main_width)
-    text = "SPACE/ENTER:select  B:Back  I:Info  X:eXit"
+    if group_hotkey == True:
+        text = "SPACE/ENTER:select  B:Back  I:Info  G:Group X:eXit"
+    else:
+        text = "SPACE/ENTER:select  B:Back  I:Info  X:eXit"
+
     t2 = snack.Textbox(main_width, 1, text)
 
     # Create Grid instance
@@ -743,7 +754,10 @@ def PKGCUSActionWindow(insScreen, lstSubject, iPosition):
                  "x": "x", \
                  "X": "x", \
                  "b": "b", \
-                 "B": "b"}
+                 "B": "b", \
+                 "g": "g", \
+                 "G": "g"}
+
     for x in myhotkeys.keys():
         g.addHotKey(x)
 
@@ -1054,7 +1068,7 @@ def PKGTypeSelectWindow(insScreen, pkgTypeList, position = 0):
     else:
         scroll = 0
 
-    hotkey_base_text = "SPACE/ENTER:select/unselect  N:Next  B:Back  I:Info  X:eXit"
+    hotkey_base_text = "SPACE/ENTER:select/unselect  N:Next  B:Back  I:Info X:eXit"
     wrapper = textwrap.TextWrapper(width = main_width)
     hotkey_text = wrapper.fill(hotkey_base_text)
     if hotkey_text != hotkey_base_text:
@@ -1181,13 +1195,14 @@ def PKGTypeSelectWindowCtrl(insScreen, pkgTypeList):
 #   lHostSize   : host size
 #   search      : search string
 #   install_type: INSTALL or REMOVE or UPDATE
+#   group_hotkey: show group_hotkey
 # Output:
 #   str   : pressed hotkey "r", "f", "c", "n", "b", "d", "s", "i", or "x"
 #   int   : position
 #   lst   : package info list (updated)
 #------------------------------------------------------------
 def PKGINSTPackageWindow(insScreen, packages, selected_packages, iPosition, lTargetSize, lHostSize, search, \
-                                                                                               install_type):
+                                                                                               install_type, group_hotkey=False):
     installed_pkgs = 0
     numChange=True      #Select or unselect operation that lead selected number change
 
@@ -1202,7 +1217,11 @@ def PKGINSTPackageWindow(insScreen, packages, selected_packages, iPosition, lTar
     else:
         scroll = 0
 
-    hotkey_base_text = "SPACE/ENTER:select/unselect  A:select/unselect All  R:seaRch N:Next  B:Back  I:Info  X:eXit"
+    if group_hotkey == True:
+        hotkey_base_text = "SPACE/ENTER:select/unselect  A:select/unselect All  R:seaRch N:Next  B:Back  I:Info G:Group X:eXit"
+    else:
+        hotkey_base_text = "SPACE/ENTER:select/unselect  A:select/unselect All  R:seaRch N:Next  B:Back  I:Info X:eXit"
+
     wrapper = textwrap.TextWrapper(width = main_width)
     hotkey_text = wrapper.fill(hotkey_base_text)
     if hotkey_text != hotkey_base_text:
@@ -1276,7 +1295,9 @@ def PKGINSTPackageWindow(insScreen, packages, selected_packages, iPosition, lTar
                  "x"     : "x", \
                  "X"     : "x", \
                  "a"     : "a", \
-                 "A"     : "a"}        
+                 "A"     : "a", \
+                 "g"     : "g", \
+                 "G"     : "g"}        
 
     for x in myhotkeys.keys():
         g.addHotKey(x)

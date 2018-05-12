@@ -145,6 +145,7 @@ def fetchSPDXorSRPM(option, install_pkgs, srcdir_path, destdir_path):
 
         if os.path.exists(src_path):
             if os.path.exists(dest_path) and filecmp.cmp(src_path,dest_path):
+                logger.info(_("%s already exists."), pkgname)
                 return
             try:
                 shutil.copyfile(src_path, dest_path)
@@ -230,7 +231,7 @@ def fetchSPDXorSRPM(option, install_pkgs, srcdir_path, destdir_path):
         except Exception as e:
             logger.error(_("Create dir failed, %s."), e)
             return
-
+  
     for pkg in sorted(install_pkgs):
         sourcerpm = pkg.sourcerpm
         if option == 'spdx':

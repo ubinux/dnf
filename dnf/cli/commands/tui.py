@@ -58,6 +58,7 @@ ACTION_GET_SPDX    = 4
 NEW_INSTALL        = 5
 RECORD_INSTALL     = 6
 SAMPLE_INSTALL     = 7
+GROUP_INSTALL      = 8
 
 CONFIRM_EXIT       = 0
 CONFIRM_INSTALL    = 1
@@ -99,6 +100,9 @@ class TuiCommand(commands.Command):
         self.installed_available = False
         self.reponame = None
         self.CONFIG_FILE = ".config"
+        self.grps = []
+        self.group_flag = False
+        self.group_botton = False
 
     def configure(self):
         self.cli.demands = dnf.cli.commands.shell.ShellDemandSheet()
@@ -179,6 +183,7 @@ class TuiCommand(commands.Command):
         STAGE_PACKAGE = 7
         STAGE_PACKAGE_SPEC = 8
         STAGE_PROCESS = 9
+        STAGE_GROUP = 10
 
         custom_type = NEW_INSTALL
         #----dnf part-------
@@ -235,12 +240,19 @@ class TuiCommand(commands.Command):
                     selected_pkgs = []
                     selected_pkgs_spec = []
                     pkgs_spec = []
+                    self.group_botton = False
 
                 # ==============================
                 # custom type
                 # ==============================
                 elif stage == STAGE_CUSTOM_TYPE:
                     (result, custom_type) = PKGCUSActionWindowCtrl(self.screen, Custom_actions, self.install_type)
+
+                    self.base.read_comps(arch_filter=True)
+                    self.grps = self.base.comps.groups
+                    if self.grps:
+                        self.group_flag = True
+                        self.group_botton = False
 
                     if result == "b":
                         # back
@@ -278,16 +290,9 @@ class TuiCommand(commands.Command):
                         stage = STAGE_CUSTOM_TYPE
                         continue
 
-                    (result, selected_pkgs, pkgs_spec) = self.PKGINSTWindowCtrl(None, \
-                                                                                None, selected_pkgs, custom_type)
-                    if result == "b":
-                        # back
-                        stage = STAGE_CUSTOM_TYPE
-
-                    elif result == "n":
-                        #next
-                        stage = STAGE_PKG_TYPE
-
+                    else:
+                        # next
+                        stage = STAGE_PACKAGE
 
                 # ==============================
                 # sample install
@@ -321,11 +326,48 @@ class TuiCommand(commands.Command):
                         stage = STAGE_CUSTOM_TYPE
 
                 #==============================
+                # Grouplist 
+                #==============================
+                elif stage == STAGE_GROUP:
+                    group_list = []
+                    for grp in self.grps:
+                        group = (grp.ui_name, grp.ui_description, grp.mandatory_packages)
+                        group_list.append(group)
+                    
+                    (result, group_id) = PKGCUSActionWindowCtrl(self.screen, group_list, self.install_type, True)
+
+                    if result == "b":
+                        # back
+                        stage = STAGE_CUSTOM_TYPE
+                        continue
+
+                    elif result == "g":
+                        #group
+                        self.group_botton = False
+                        stage = STAGE_PACKAGE
+                        continue
+
+                    else:
+                        pkg_group = group_list[group_id][2]
+                        stage = STAGE_PACKAGE
+
+
+                #==============================
                 # select package
                 #==============================
                 elif stage == STAGE_PACKAGE:
-                    (result, selected_pkgs, pkgs_spec) = self.PKGINSTWindowCtrl(None, \
+                    if self.group_flag == True and self.install_type == ACTION_INSTALL:
+                        if self.group_botton == False:
+                            (result, selected_pkgs, pkgs_spec) = self.PKGINSTWindowCtrl(None, \
+                                                                                None, selected_pkgs, custom_type, pkg_group=[], group_hotkey=True)
+
+                        else:
+                            (result, selected_pkgs, pkgs_spec) = self.PKGINSTWindowCtrl(None, \
+                                                                                None, selected_pkgs, custom_type, pkg_group)
+                    else:
+                        (result, selected_pkgs, pkgs_spec) = self.PKGINSTWindowCtrl(None, \
                                                                                 None, selected_pkgs, custom_type)
+
                     if result == "b":
                         # back
                         if self.install_type == ACTION_INSTALL:
@@ -333,6 +375,17 @@ class TuiCommand(commands.Command):
                         else:
                             stage = STAGE_INSTALL_TYPE
                             self.no_gpl3 = False
+
+                        if self.group_botton == True:
+                            stage = STAGE_GROUP
+                        continue
+
+                    if result == "g":
+                        if self.group_flag == True and self.install_type == ACTION_INSTALL:
+                            #group
+                            self.group_botton = True
+                            stage = STAGE_GROUP
+                            continue
 
                     elif result == "n":
                         if self.install_type == ACTION_INSTALL:
@@ -480,7 +533,34 @@ class TuiCommand(commands.Command):
                     display_pkgs.remove(pkg)
         return haveUpgrade
 
-    def PKGINSTWindowCtrl(self, pkgTypeList, packages=None, selected_pkgs=[], custom_type=0):
+    def PkgType_filter(self, display_pkgs, packages, pkgTypeList):
+        pkgType_dic= dict()  
+        Type_status = False
+        for pkgType in pkgTypeList:
+            pkgType_dic[pkgType.name] = pkgType.status
+            if pkgType.status == True:
+                Type_status = True
+
+        if Type_status:
+            #Don't show doc and dbg packages
+            strings_pattern_end = ('-dev', '-doc', '-dbg', '-staticdev', '-ptest')
+            for pkg in packages:
+                if "-locale-" in pkg.name and not pkgType_dic["locale"]:
+                    display_pkgs.remove(pkg)
+                elif "-localedata-" in pkg.name and not pkgType_dic["locale"]:
+                    display_pkgs.remove(pkg)
+                elif pkg.name.endswith(strings_pattern_end):
+                    index = pkg.name.rindex('-')
+                    string_pattern = pkg.name[index+1:]
+                    if not pkgType_dic[string_pattern]:
+                        display_pkgs.remove(pkg)
+
+        else:
+            display_pkgs = []
+
+        return display_pkgs
+
+    def PKGINSTWindowCtrl(self, pkgTypeList, packages=None, selected_pkgs=[], custom_type=0, pkg_group=[], group_hotkey=False):
         STAGE_SELECT = 1
         STAGE_PKG_TYPE = 2
         STAGE_BACK   = 3
@@ -488,6 +568,7 @@ class TuiCommand(commands.Command):
         STAGE_EXIT   = 5
         STAGE_SEARCH = 6
         STAGE_NEXT = 7
+        STAGE_GROUP = 8
 
         iTargetSize = 0
         iHostSize = 0
@@ -504,6 +585,7 @@ class TuiCommand(commands.Command):
                      "b": STAGE_BACK, \
                      "i": STAGE_INFO, \
                      "x": STAGE_EXIT, \
+                     "g": STAGE_GROUP, \
                      "r": STAGE_SEARCH}
  
         try:
@@ -520,14 +602,10 @@ class TuiCommand(commands.Command):
             sorted(packages)
             sorted(display_pkgs)
         else:
-            #pkg_available = copy.copy(ypl.available)
-            #pkg_installed = copy.copy(ypl.installed)
-            #packages = ypl.installed + ypl.available
-            #display_pkgs = pkg_installed + pkg_available
             display_pkgs = copy.copy(packages)
 
         if self.no_gpl3:
-            for pkg in (ypl.installed + ypl.available):
+            for pkg in packages:
                 license = pkg.license
                 if license:
                     if "GPLv3" in license:
@@ -535,47 +613,7 @@ class TuiCommand(commands.Command):
             packages = copy.copy(display_pkgs) #backup all pkgs
 
         if pkgTypeList != None:
-            string_pattern_in = ("locale", "dev", "doc", "dbg", "staticdev", "ptest")
-            for pkgType in pkgTypeList:
-                if pkgType.name == "locale":
-                    pkgType_locale = pkgType.status
-                elif pkgType.name == "dev":
-                    pkgType_dev = pkgType.status
-                elif pkgType.name == "doc":
-                    pkgType_doc = pkgType.status
-                elif pkgType.name == "dbg":
-                    pkgType_dbg = pkgType.status
-                elif pkgType.name == "staticdev":
-                    pkgType_staticdev = pkgType.status
-                elif pkgType.name == "ptest":
-                    pkgType_ptest = pkgType.status
-
-            if pkgType_locale or pkgType_dev or pkgType_doc or pkgType_dbg or pkgType_staticdev or pkgType_ptest:
-                #Don't show doc and dbg packages
-                for pkg in packages:
-                    if "-locale-" in pkg.name:
-                        if not pkgType_locale:
-                            display_pkgs.remove(pkg)
-                    elif "-localedata-" in pkg.name:
-                        if not pkgType_locale:
-                            display_pkgs.remove(pkg)
-                    elif pkg.name.endswith('-dev'):
-                        if not pkgType_dev:
-                            display_pkgs.remove(pkg)
-                    elif pkg.name.endswith('-doc'):
-                        if not pkgType_doc:
-                            display_pkgs.remove(pkg)
-                    elif pkg.name.endswith('-dbg'):
-                        if not pkgType_dbg:
-                            display_pkgs.remove(pkg)
-                    elif pkg.name.endswith('-staticdev'):
-                        if not pkgType_staticdev:
-                            display_pkgs.remove(pkg)
-                    elif pkg.name.endswith('-ptest'):
-                        if not pkgType_ptest:
-                            display_pkgs.remove(pkg)
-            else:
-                display_pkgs = []
+            display_pkgs = self.PkgType_filter(display_pkgs, packages, pkgTypeList)
 
             actions = (ACTION_REMOVE, ACTION_UPGRADE, ACTION_GET_SOURCE, ACTION_GET_SPDX)
             if self.install_type in actions:
@@ -608,7 +646,7 @@ class TuiCommand(commands.Command):
         else:
             #filter the type pkg such as -dev (Round1)
             if self.install_type == ACTION_INSTALL:
-                string_pattern_end = ('-dev', '-doc', '-dbg', '-staticdev', '-ptest')
+                strings_pattern_end = ('-dev', '-doc', '-dbg', '-staticdev', '-ptest')
                 for pkg in packages:
                     if "-locale-" in pkg.name:
                         display_pkgs.remove(pkg)
@@ -616,13 +654,23 @@ class TuiCommand(commands.Command):
                     elif "-localedata-" in pkg.name:
                         display_pkgs.remove(pkg)
                         pkgs_spec.append(pkg)
-                    elif pkg.name.endswith(string_pattern_end):
+                    elif pkg.name.endswith(strings_pattern_end):
                         display_pkgs.remove(pkg)
                         pkgs_spec.append(pkg)
 
                 if(self._DeleteUpgrade(packages,display_pkgs)):
                     hkey = HotkeyAttentionWindow(self.screen, ATTENTON_HAVE_UPGRADE)
 
+                if self.group_flag == True and self.group_botton == True:
+                    groupinfo = []
+                    for pkg in pkg_group:
+                       groupinfo.append(pkg.name)
+                    display_pkgs = []
+                    for pkg in packages:
+                       if pkg.name in groupinfo:
+                           display_pkgs.append(pkg)
+
+            #Except install
             else:
                 for pkg in packages:
                     if pkg not in ypl.installed:
@@ -668,7 +716,7 @@ class TuiCommand(commands.Command):
                                                             iTargetSize, \
                                                             iHostSize, \
                                                             search, \
-                                                            self.install_type)
+                                                            self.install_type, group_hotkey)
                 else:
                     (hkey, search_position, pkglist) = PKGINSTPackageWindow(self.screen, \
                                                              searched_ret, \
@@ -677,7 +725,7 @@ class TuiCommand(commands.Command):
                                                              iTargetSize, \
                                                              iHostSize, \
                                                              search, \
-                                                             self.install_type)
+                                                             self.install_type, group_hotkey)
 
                 stage = hotkey_switch.get(hkey, None)
 
@@ -704,6 +752,12 @@ class TuiCommand(commands.Command):
                     search = None
                 else:
                     return ("b", selected_pkgs, pkgs_spec)
+            elif stage == STAGE_GROUP:
+                if not search == None:
+                    stage = STAGE_SELECT
+                    search = None
+                else:
+                    return ("g", selected_pkgs, pkgs_spec)
             elif stage == STAGE_INFO:
                 if not search == None:
                     PKGINSTPackageInfoWindow(self.screen, searched_ret[search_position])
