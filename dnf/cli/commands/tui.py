@@ -457,13 +457,14 @@ class TuiCommand(commands.Command):
                         break
                     else:
                         if custom_type == SAMPLE_INSTALL:
-                            for pkg in config_list:
-                                s_line = ["install", pkg]
-                                self.run_dnf_command(s_line)
                             hkey = HotkeyExitWindow(self.screen, CONFIRM_INSTALL)
                             if hkey == "n":
                                 stage = STAGE_CUSTOM_TYPE
                                 continue
+
+                            for pkg in config_list:
+                                s_line = ["install", pkg]
+                                self.run_dnf_command(s_line)
                                 
                         else:
                             for pkg in selected_pkgs:           #selected_pkgs
