@@ -6,7 +6,9 @@ SPDXREPODIR=$3
 SPDXDIR=$4
 SRPMREPODIR=$5
 SRPMDIR=$6
-TARGETROOTFS=$7
+RPMREPODIR=$7
+RPMDIR=$8
+TARGETROOTFS=$9
 WORKDIR=`pwd`
 
 echo "export TARGET_ROOTFS=$TARGETROOTFS" > $WORKDIR/.env-dnf
@@ -16,6 +18,8 @@ echo "export SPDX_REPO_DIR=$SPDXREPODIR" >> $WORKDIR/.env-dnf
 echo "export SPDX_DESTINATION_DIR=$SPDXDIR" >> $WORKDIR/.env-dnf
 echo "export SRPM_REPO_DIR=$SRPMREPODIR" >> $WORKDIR/.env-dnf
 echo "export SRPM_DESTINATION_DIR=$SRPMDIR" >> $WORKDIR/.env-dnf
+echo "export RPM_REPO_DIR=$RPMREPODIR" >> $WORKDIR/.env-dnf
+echo "export RPM_DESTINATION_DIR=$RPMDIR" >> $WORKDIR/.env-dnf
 echo "export LD_LIBRARY_PATH=$OECORE_NATIVE_SYSROOT/usr/bin/../lib/pseudo/lib:$OECORE_NATIVE_SYSROOT/usr/bin/../lib/pseudo/lib64" >> $WORKDIR/.env-dnf
 echo "export LD_PRELOAD=libpseudo.so" >> $WORKDIR/.env-dnf
 echo "export PSEUDO_PASSWD=$HIDDENROOTFS" >> $WORKDIR/.env-dnf 
@@ -84,6 +88,8 @@ echo "spdx_repodir=$SPDXREPODIR" >> $HIDDEN_ROOTFS/etc/dnf/dnf-host.conf
 echo "spdx_download=$SPDXDIR" >> $HIDDEN_ROOTFS/etc/dnf/dnf-host.conf
 echo "srpm_repodir=$SRPMREPODIR" >> $HIDDEN_ROOTFS/etc/dnf/dnf-host.conf
 echo "srpm_download=$SRPMDIR" >> $HIDDEN_ROOTFS/etc/dnf/dnf-host.conf
+echo "rpm_repodir=$RPMREPODIR" >> $HIDDEN_ROOTFS/etc/dnf/dnf-host.conf
+echo "rpm_download=$RPMDIR" >> $HIDDEN_ROOTFS/etc/dnf/dnf-host.conf
 
 if [ ! -d $HIDDEN_ROOTFS/etc/dnf/vars ]; then
     mkdir -p $HIDDEN_ROOTFS/etc/dnf/vars

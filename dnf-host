@@ -9,6 +9,8 @@ DEFAULT_SPDX_REPO_DIR=file://$WORKDIR/spdx_repo
 DEFAULT_SPDX_DESTINATION_DIR=$WORKDIR/spdx_download
 DEFAULT_SRPM_REPO_DIR=file://$WORKDIR/srpm_repo
 DEFAULT_SRPM_DESTINATION_DIR=$WORKDIR/srpm_download
+DEFAULT_RPM_REPO_DIR=file://$WORKDIR/oe_repo
+DEFAULT_RPM_DESTINATION_DIR=$WORKDIR/rpm_download
 TAR="false"
 
 usage () {
@@ -128,11 +130,30 @@ dnf-init() {
         mkdir -p $DEFINE_SRPM_DESTINATION_DIR
     fi
 
+    #get RPM repo directory    
+    set_dir $DEFAULT_RPM_REPO_DIR "RPM repo"
+    DEFINE_RPM_REPO_DIR=$USER_DEFINE
+
+    #Add 'file://' for RPM_REPO_DIR
+    if [ ${DEFINE_RPM_REPO_DIR:0:4} != "file" ];then
+        DEFINE_RPM_REPO_DIR=file://${DEFINE_RPM_REPO_DIR}
+    fi
+
+    #get RPM file destination directory
+    set_dir $DEFAULT_RPM_DESTINATION_DIR "RPM file destination"
+    DEFINE_RPM_DESTINATION_DIR=$USER_DEFINE
+
+    if [ ! -d $DEFINE_RPM_DESTINATION_DIR ];then
+        echo "Create the RPM file destination directory automatically"
+        mkdir -p $DEFINE_RPM_DESTINATION_DIR
+    fi
+
+    #Delete the prefix "file://" in REPO_DIR
     if [ ${DEFINE_REPO_DIR:0:4} = "file" ];then
         DEFINE_REPO_DIR=${DEFINE_REPO_DIR#*//}
     fi
 
-    environment-dnf.sh $HIDDEN_ROOTFS_DIR $DEFINE_REPO_DIR $DEFINE_SPDX_REPO_DIR $DEFINE_SPDX_DESTINATION_DIR $DEFINE_SRPM_REPO_DIR $DEFINE_SRPM_DESTINATION_DIR $DEFAULT_ROOTFS_DIR
+    environment-dnf.sh $HIDDEN_ROOTFS_DIR $DEFINE_REPO_DIR $DEFINE_SPDX_REPO_DIR $DEFINE_SPDX_DESTINATION_DIR $DEFINE_SRPM_REPO_DIR $DEFINE_SRPM_DESTINATION_DIR $DEFINE_RPM_REPO_DIR $DEFINE_RPM_DESTINATION_DIR $DEFAULT_ROOTFS_DIR
 }
 
 dnf-show() {
@@ -160,6 +181,7 @@ Repos-rootfs(){
     sudo tar -xjf ../${ROOTFS_TAR} -C ${TARGET_ROOTFS}/rootfs-${RELEASE}-${Date} --numeric-owner
     sudo rm ${TARGET_ROOTFS}/rootfs-${RELEASE}-${Date}/etc/dnf/dnf-host.conf
     rm ../${ROOTFS_TAR}
+    echo "Target dir is ${TARGET_ROOTFS}/rootfs-${RELEASE}-${Date}"
 }
 
 dnf-call() {

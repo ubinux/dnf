@@ -9,8 +9,9 @@ from dnf.cli.format import *
 ACTION_INSTALL    = 0
 ACTION_REMOVE     = 1
 ACTION_UPGRADE    = 2
-ACTION_GET_SOURCE = 3
-ACTION_GET_SPDX   = 4
+ACTION_GET_PKG    = 3
+ACTION_GET_SOURCE = 4
+ACTION_GET_SPDX   = 5
 
 
 Confirm_type_list = [("Exit","\n Do you really want to terminate it?\n\n"), \
@@ -18,6 +19,7 @@ Confirm_type_list = [("Exit","\n Do you really want to terminate it?\n\n"), \
                      ("License","\n Do you want to display GPLv3 packages?\n\n"), \
                      ("Confirm remove","\n Do you want to begin removing?\n\n"), \
                      ("Confirm upgrade","\n Do you want to begin upgrading?\n\n"), \
+                     ("Confirm get package","\n Begin getting package archive?\n\n"), \
                      ("Confirm get source","\n Begin getting source archive?\n\n"), \
                      ("Confirm get SPDX","\n Begin getting SPDX archive?\n\n") \
                      ]
@@ -27,7 +29,7 @@ You can enter 'upgrade' scene to upgrade \ninstalled packages.\n"), \
                      ("Attention!","\n There is no package to be upgraded!\n\n") \
                      ]
 
-SIGN_SELECT=["*", "-", "U", "S", "S"]
+SIGN_SELECT=["*", "-", "U", "R", "S", "S"]
 
 class pkgType:
     name = None
@@ -1068,7 +1070,7 @@ def PKGTypeSelectWindow(insScreen, pkgTypeList, position = 0):
     else:
         scroll = 0
 
-    hotkey_base_text = "SPACE/ENTER:select/unselect  N:Next  B:Back  I:Info X:eXit"
+    hotkey_base_text = "SPACE/ENTER:select/unselect  N:Next  B:Back  I:Info  X:eXit"
     wrapper = textwrap.TextWrapper(width = main_width)
     hotkey_text = wrapper.fill(hotkey_base_text)
     if hotkey_text != hotkey_base_text:

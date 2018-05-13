@@ -783,6 +783,8 @@ class MainConf(BaseConfig):
         self._add_option('spdx_download', PathOption('/', abspath=True))
         self._add_option('srpm_repodir', UrlListOption())
         self._add_option('srpm_download', PathOption('/', abspath=True))
+        self._add_option('rpm_repodir', UrlListOption())
+        self._add_option('rpm_download', PathOption('/', abspath=True))
 
     @property
     def get_reposdir(self):

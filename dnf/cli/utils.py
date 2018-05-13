@@ -139,8 +139,17 @@ def fetchSPDXorSRPM(option, install_pkgs, srcdir_path, destdir_path):
     :return: No
     """
 
+    def find_dir(dir_path, file_name):
+        for (root, dirs, filenames) in os.walk(dir_path):
+            if file_name in filenames:
+                found_path = root + '/' + file_name
+                return found_path
+            else: 
+                for dir in dirs:
+                    find_dir(root + '/' + dir, file_name)
+
     def copy_package(option, pkgname):
-        src_path = srcdir_path + '/' + pkgname
+        src_path = find_dir(srcdir_path, pkgname)
         dest_path = destdir_path + '/' + pkgname
 
         if os.path.exists(src_path):
@@ -207,6 +216,7 @@ def fetchSPDXorSRPM(option, install_pkgs, srcdir_path, destdir_path):
         else:
             return True
 
+    #Start from here
     srcdir_path = "".join(tuple(srcdir_path))  #transfer a list to string
     '''local fetch'''
     if srcdir_path.startswith('file://') or srcdir_path.startswith('/'):
@@ -234,6 +244,7 @@ def fetchSPDXorSRPM(option, install_pkgs, srcdir_path, destdir_path):
   
     for pkg in sorted(install_pkgs):
         sourcerpm = pkg.sourcerpm
+        rpm_name = pkg.sourcerpm.replace('src', pkg.arch)
         if option == 'spdx':
             if "-locale" in sourcerpm:
                 sourcerpm = sourcerpm.replace('-locale', '')
@@ -243,4 +254,6 @@ def fetchSPDXorSRPM(option, install_pkgs, srcdir_path, destdir_path):
             fetch_package(option, type, spdxname)
         elif option == 'srpm':
             fetch_package(option, type, sourcerpm)
+        elif option == 'rpm':
+            fetch_package(option, type, rpm_name)
 

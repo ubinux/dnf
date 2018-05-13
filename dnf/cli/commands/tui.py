@@ -41,8 +41,9 @@ _TXT_ROOT_TITLE = "Package Installer"
 Install_actions = [("Install", "Choose it to install packages."), \
                    ("Remove", "Choose it to remove packages"), \
                    ("Upgrade", "Choose it to upgrade packages"), \
+                   ("Create package archive", "Choose it to create package archive"), \
                    ("Create source archive", "Choose it to create source archive"), \
-                   ("Create spdx archive", "Choose it to Create SPDX archive") \
+                   ("Create spdx archive", "Choose it to create SPDX archive") \
                   ]
 
 Custom_actions = [("New", "Install without config file."), \
@@ -53,20 +54,23 @@ Custom_actions = [("New", "Install without config file."), \
 ACTION_INSTALL     = 0
 ACTION_REMOVE      = 1
 ACTION_UPGRADE     = 2
-ACTION_GET_SOURCE  = 3
-ACTION_GET_SPDX    = 4
-NEW_INSTALL        = 5
-RECORD_INSTALL     = 6
-SAMPLE_INSTALL     = 7
-GROUP_INSTALL      = 8
+ACTION_GET_PKG     = 3
+ACTION_GET_SOURCE  = 4
+ACTION_GET_SPDX    = 5
+GROUP_INSTALL      = 6
+
+NEW_INSTALL        = 0
+RECORD_INSTALL     = 1
+SAMPLE_INSTALL     = 2
 
 CONFIRM_EXIT       = 0
 CONFIRM_INSTALL    = 1
 CONFIRM_LICENSE    = 2
 CONFIRM_REMOVE     = 3
 CONFIRM_UPGRADE    = 4
-CONFIRM_GET_SOURCE = 5
-CONFIRM_GET_SPDX   = 6
+CONFIRM_GET_PKG    = 5
+CONFIRM_GET_SOURCE = 6
+CONFIRM_GET_SPDX   = 7
 
 ATTENTON_NONE           = 0
 ATTENTON_HAVE_UPGRADE   = 1
@@ -138,6 +142,14 @@ class TuiCommand(commands.Command):
             srcdir_path = self.base.conf.spdx_repodir
             destdir_path = self.base.conf.spdx_download
             dnf.cli.utils.fetchSPDXorSRPM('spdx', selected_pkgs, srcdir_path, destdir_path)
+
+    def GET_RKG(self, selected_pkgs):
+        if self.screen != None:
+            StopHotkeyScreen(self.screen)
+            self.screen = None
+        srcdir_path = self.base.conf.rpm_repodir
+        destdir_path = self.base.conf.rpm_download
+        dnf.cli.utils.fetchSPDXorSRPM('rpm', selected_pkgs, srcdir_path, destdir_path)
 
     def Read_ConfigFile(self, display_pkgs, selected_pkgs):
         f = open(self.CONFIG_FILE, "r")
@@ -259,7 +271,6 @@ class TuiCommand(commands.Command):
                         stage = STAGE_INSTALL_TYPE
                         continue
 
-                    custom_type = custom_type + 5
                     if custom_type == NEW_INSTALL:
                         stage = STAGE_PACKAGE
                         result = HotkeyExitWindow(self.screen, confirm_type=CONFIRM_LICENSE)
@@ -394,6 +405,7 @@ class TuiCommand(commands.Command):
                             #confirm if or not continue process function
                             if   self.install_type == ACTION_REMOVE     : confirm_type = CONFIRM_REMOVE
                             elif self.install_type == ACTION_UPGRADE    : confirm_type = CONFIRM_UPGRADE
+                            elif self.install_type == ACTION_GET_PKG : confirm_type = CONFIRM_GET_PKG
                             elif self.install_type == ACTION_GET_SOURCE : confirm_type = CONFIRM_GET_SOURCE
                             elif self.install_type == ACTION_GET_SPDX   : confirm_type = CONFIRM_GET_SPDX
 
@@ -434,6 +446,9 @@ class TuiCommand(commands.Command):
                 elif stage == STAGE_PROCESS:
                     if self.install_type == ACTION_GET_SOURCE or self.install_type == ACTION_GET_SPDX:
                         self.GET_SOURCE_or_SPDX(selected_pkgs)
+                        break
+                    if self.install_type == ACTION_GET_PKG:
+                        self.GET_RKG(selected_pkgs)
                         break
                     else:
                         if custom_type == SAMPLE_INSTALL:
@@ -615,7 +630,7 @@ class TuiCommand(commands.Command):
         if pkgTypeList != None:
             display_pkgs = self.PkgType_filter(display_pkgs, packages, pkgTypeList)
 
-            actions = (ACTION_REMOVE, ACTION_UPGRADE, ACTION_GET_SOURCE, ACTION_GET_SPDX)
+            actions = (ACTION_REMOVE, ACTION_UPGRADE, ACTION_GET_PKG, ACTION_GET_SOURCE, ACTION_GET_SPDX)
             if self.install_type in actions:
                 for pkg in packages:
                     if pkg not in ypl.installed:
