@@ -149,10 +149,12 @@ def fetchSPDXorSRPM(option, install_pkgs, srcdir_path, destdir_path):
                     find_dir(root + '/' + dir, file_name)
 
     def copy_package(option, pkgname):
+        #src_path = srcdir_path + '/' + pkgname
+        src_path = None
         src_path = find_dir(srcdir_path, pkgname)
         dest_path = destdir_path + '/' + pkgname
 
-        if os.path.exists(src_path):
+        if src_path:
             if os.path.exists(dest_path) and filecmp.cmp(src_path,dest_path):
                 logger.info(_("%s already exists."), pkgname)
                 return
@@ -244,7 +246,6 @@ def fetchSPDXorSRPM(option, install_pkgs, srcdir_path, destdir_path):
   
     for pkg in sorted(install_pkgs):
         sourcerpm = pkg.sourcerpm
-        rpm_name = pkg.sourcerpm.replace('src', pkg.arch)
         if option == 'spdx':
             if "-locale" in sourcerpm:
                 sourcerpm = sourcerpm.replace('-locale', '')
@@ -255,5 +256,6 @@ def fetchSPDXorSRPM(option, install_pkgs, srcdir_path, destdir_path):
         elif option == 'srpm':
             fetch_package(option, type, sourcerpm)
         elif option == 'rpm':
+            rpm_name = pkg.name+"-"+pkg.version+"-"+pkg.release+"."+pkg.arch+".rpm"
             fetch_package(option, type, rpm_name)
 

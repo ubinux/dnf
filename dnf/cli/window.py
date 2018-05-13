@@ -756,9 +756,12 @@ def PKGCUSActionWindow(insScreen, lstSubject, iPosition, group_hotkey=False):
                  "x": "x", \
                  "X": "x", \
                  "b": "b", \
-                 "B": "b", \
-                 "g": "g", \
-                 "G": "g"}
+                 "B": "b"}
+
+    #If group exists, add group_hotkey
+    if group_hotkey == True:
+        myhotkeys["g"] = "g"
+        myhotkeys["G"] = "g"
 
     for x in myhotkeys.keys():
         g.addHotKey(x)
@@ -1297,9 +1300,12 @@ def PKGINSTPackageWindow(insScreen, packages, selected_packages, iPosition, lTar
                  "x"     : "x", \
                  "X"     : "x", \
                  "a"     : "a", \
-                 "A"     : "a", \
-                 "g"     : "g", \
-                 "G"     : "g"}        
+                 "A"     : "a"}
+
+    #If group exists, add group_hotkey
+    if group_hotkey == True:
+        myhotkeys["g"] = "g"
+        myhotkeys["G"] = "g"
 
     for x in myhotkeys.keys():
         g.addHotKey(x)

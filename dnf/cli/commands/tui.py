@@ -47,8 +47,7 @@ Install_actions = [("Install", "Choose it to install packages."), \
                   ]
 
 Custom_actions = [("New", "Install without config file."), \
-                  ("Load package file", "Load config file"),  \
-                  ("Reference", "Samples for package list")
+                  ("Load package file", "Load config file")
                   ]
 
 ACTION_INSTALL     = 0
@@ -130,18 +129,31 @@ class TuiCommand(commands.Command):
         except:
             pass
 
+    def PKG_filter(self, packages):
+        strings_pattern_end = ('-dev', '-doc', '-dbg', '-staticdev', '-ptest')
+        notype_pkgs = packages
+        for pkg in packages:
+            if "-locale-" in pkg.name:
+                notype_pkgs.remove(pkg)
+            elif "-localedata-" in pkg.name:
+                notype_pkgs.remove(pkg)
+            elif pkg.name.endswith(strings_pattern_end):
+                notype_pkgs.remove(pkg)
+        return notype_pkgs
+
     def GET_SOURCE_or_SPDX(self, selected_pkgs):
         if self.screen != None:
             StopHotkeyScreen(self.screen)
             self.screen = None
+        notype_pkgs = self.PKG_filter(selected_pkgs)
         if self.install_type == ACTION_GET_SOURCE:
             srcdir_path = self.base.conf.srpm_repodir
             destdir_path = self.base.conf.srpm_download
-            dnf.cli.utils.fetchSPDXorSRPM('srpm', selected_pkgs, srcdir_path, destdir_path)
+            dnf.cli.utils.fetchSPDXorSRPM('srpm', notype_pkgs, srcdir_path, destdir_path)
         elif self.install_type == ACTION_GET_SPDX:
             srcdir_path = self.base.conf.spdx_repodir
             destdir_path = self.base.conf.spdx_download
-            dnf.cli.utils.fetchSPDXorSRPM('spdx', selected_pkgs, srcdir_path, destdir_path)
+            dnf.cli.utils.fetchSPDXorSRPM('spdx', notype_pkgs, srcdir_path, destdir_path)
 
     def GET_RKG(self, selected_pkgs):
         if self.screen != None:
@@ -179,7 +191,7 @@ class TuiCommand(commands.Command):
             for (root, dirs, filenames) in os.walk(SAMPLE):
                 filenames.sort()
                 for index in range(len(filenames)):
-                    sample = ("Reference" + str(index+1) + "(" + filenames[index] + " based root file system)", filenames[index] + " based root file system")
+                    sample = ("Reference" + str(index+1) + "(" + filenames[index] + " based root file system)", filenames[index] + " based root file system", filenames[index])
                     sample_list.append(sample)
             return (True, sample_list)
         else:
@@ -235,6 +247,10 @@ class TuiCommand(commands.Command):
             selected_pkgs = []
             selected_pkgs_spec = []
             pkgs_spec = []
+            (Flag, sample_list) = self.Read_Samples()
+            if Flag == True:
+                for sample in sample_list:
+                    Custom_actions.append(sample)
 
             while True:
                 #==============================
@@ -260,6 +276,7 @@ class TuiCommand(commands.Command):
                 elif stage == STAGE_CUSTOM_TYPE:
                     (result, custom_type) = PKGCUSActionWindowCtrl(self.screen, Custom_actions, self.install_type)
 
+                    # Read comps information
                     self.base.read_comps(arch_filter=True)
                     self.grps = self.base.comps.groups
                     if self.grps:
@@ -281,7 +298,9 @@ class TuiCommand(commands.Command):
                     elif custom_type == RECORD_INSTALL:
                         stage = STAGE_RECORD_INSTALL
                         self.no_gpl3 = False
-                    elif custom_type == SAMPLE_INSTALL:
+                    elif custom_type >= SAMPLE_INSTALL:
+                        sample_type = custom_type-2
+                        custom_type = SAMPLE_INSTALL
                         stage = STAGE_SAMPLE_INSTALL
                         self.no_gpl3 = False
 
@@ -309,32 +328,18 @@ class TuiCommand(commands.Command):
                 # sample install
                 # ==============================
                 elif stage == STAGE_SAMPLE_INSTALL:
-                    (Flag, sample_list) = self.Read_Samples()
-                    if Flag == True:
-                        (result, sample_type) = PKGCUSActionWindowCtrl(self.screen, sample_list, self.install_type)
-
-                        if result == "b":
-                            # back
-                            stage = STAGE_CUSTOM_TYPE
-                            continue
-                        
-                        else:
-                            config_file = SAMPLE + '/' + sample_list[sample_type][0]
-                            try:
-                                f = open(config_file, "r")
-                            except Exception as e:
-                                logger.error(_("%s."), e)
-                                StopHotkeyScreen(self.screen)
-                                self.screen = None
-                                sys.exit(0)
-                            get_text = f.read()
-                            config_list = get_text.split('\n')
-                            config_list.pop() 
-                            stage = STAGE_PROCESS
-
-                    else:
-                        SampleMissWindow(self.screen, sample_list)
-                        stage = STAGE_CUSTOM_TYPE
+                    config_file = SAMPLE + '/' + sample_list[sample_type][2]
+                    try:
+                        f = open(config_file, "r")
+                    except Exception as e:
+                        logger.error(_("%s."), e)
+                        StopHotkeyScreen(self.screen)
+                        self.screen = None
+                        sys.exit(0)
+                    get_text = f.read()
+                    config_list = get_text.split('\n')
+                    config_list.pop()
+                    stage = STAGE_PROCESS
 
                 #==============================
                 # Grouplist 
@@ -457,7 +462,7 @@ class TuiCommand(commands.Command):
                                 self.run_dnf_command(s_line)
                             hkey = HotkeyExitWindow(self.screen, CONFIRM_INSTALL)
                             if hkey == "n":
-                                stage = STAGE_SAMPLE_INSTALL
+                                stage = STAGE_CUSTOM_TYPE
                                 continue
                                 
                         else:
