@@ -12,6 +12,7 @@ ACTION_UPGRADE    = 2
 ACTION_GET_PKG    = 3
 ACTION_GET_SOURCE = 4
 ACTION_GET_SPDX   = 5
+ACTION_GET_SPDX   = 6
 
 
 Confirm_type_list = [("Exit","\n Do you really want to terminate it?\n\n"), \
@@ -21,15 +22,17 @@ Confirm_type_list = [("Exit","\n Do you really want to terminate it?\n\n"), \
                      ("Confirm upgrade","\n Do you want to begin upgrading?\n\n"), \
                      ("Confirm get package","\n Begin getting package archive?\n\n"), \
                      ("Confirm get source","\n Begin getting source archive?\n\n"), \
-                     ("Confirm get SPDX","\n Begin getting SPDX archive?\n\n") \
+                     ("Confirm get SPDX","\n Begin getting SPDX archive?\n\n"), \
+                     ("Confirm get ALL","\n Begin getting all archive?\n\n") \
                      ]
+
 Attention_type_list=[("Attention!","\n You must installed some packages first!\n\n"), \
                      ("Attention!","Have some advanced version packages.\nShow installed only!\n\
 You can enter 'upgrade' scene to upgrade \ninstalled packages.\n"), \
                      ("Attention!","\n There is no package to be upgraded!\n\n") \
                      ]
 
-SIGN_SELECT=["*", "-", "U", "R", "S", "S"]
+SIGN_SELECT=["*", "-", "U", "R", "S", "S", "A"]
 
 class pkgType:
     name = None

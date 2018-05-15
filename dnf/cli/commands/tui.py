@@ -41,9 +41,10 @@ _TXT_ROOT_TITLE = "Package Installer"
 Install_actions = [("Install", "Choose it to install packages."), \
                    ("Remove", "Choose it to remove packages"), \
                    ("Upgrade", "Choose it to upgrade packages"), \
-                   ("Create package archive", "Choose it to create package archive"), \
-                   ("Create source archive", "Choose it to create source archive"), \
-                   ("Create spdx archive", "Choose it to create SPDX archive") \
+                   ("Create package archive(rpm)", "Choose it to create package archive"), \
+                   ("Create source archive(src.rpm)", "Choose it to create source archive"), \
+                   ("Create spdx archive(spdx)", "Choose it to create SPDX archive"), \
+                   ("Create archive(rpm, src.rpm and spdx files)", "Choose it to create all archive") \
                   ]
 
 Custom_actions = [("New", "Install without config file."), \
@@ -56,7 +57,8 @@ ACTION_UPGRADE     = 2
 ACTION_GET_PKG     = 3
 ACTION_GET_SOURCE  = 4
 ACTION_GET_SPDX    = 5
-GROUP_INSTALL      = 6
+ACTION_GET_ALL     = 6
+GROUP_INSTALL      = 7
 
 NEW_INSTALL        = 0
 RECORD_INSTALL     = 1
@@ -70,6 +72,7 @@ CONFIRM_UPGRADE    = 4
 CONFIRM_GET_PKG    = 5
 CONFIRM_GET_SOURCE = 6
 CONFIRM_GET_SPDX   = 7
+CONFIRM_GET_ALL    = 8
 
 ATTENTON_NONE           = 0
 ATTENTON_HAVE_UPGRADE   = 1
@@ -162,6 +165,18 @@ class TuiCommand(commands.Command):
         srcdir_path = self.base.conf.rpm_repodir
         destdir_path = self.base.conf.rpm_download
         dnf.cli.utils.fetchSPDXorSRPM('rpm', selected_pkgs, srcdir_path, destdir_path)
+
+    def GET_ALL(self, selected_pkgs):
+        if self.screen != None:
+            StopHotkeyScreen(self.screen)
+            self.screen = None
+        dnf.cli.utils.fetchSPDXorSRPM('rpm', selected_pkgs, 
+                    self.base.conf.rpm_repodir, self.base.conf.rpm_download)
+        notype_pkgs = self.PKG_filter(selected_pkgs)
+        dnf.cli.utils.fetchSPDXorSRPM('srpm', notype_pkgs, 
+                    self.base.conf.srpm_repodir, self.base.conf.srpm_download)
+        dnf.cli.utils.fetchSPDXorSRPM('spdx', notype_pkgs, 
+                    self.base.conf.spdx_repodir, self.base.conf.spdx_download)
 
     def Read_ConfigFile(self, display_pkgs, selected_pkgs):
         f = open(self.CONFIG_FILE, "r")
@@ -408,11 +423,13 @@ class TuiCommand(commands.Command):
                             stage = STAGE_PKG_TYPE
                         else:
                             #confirm if or not continue process function
-                            if   self.install_type == ACTION_REMOVE     : confirm_type = CONFIRM_REMOVE
-                            elif self.install_type == ACTION_UPGRADE    : confirm_type = CONFIRM_UPGRADE
-                            elif self.install_type == ACTION_GET_PKG : confirm_type = CONFIRM_GET_PKG
-                            elif self.install_type == ACTION_GET_SOURCE : confirm_type = CONFIRM_GET_SOURCE
-                            elif self.install_type == ACTION_GET_SPDX   : confirm_type = CONFIRM_GET_SPDX
+                            install_type_switch = {ACTION_REMOVE: CONFIRM_REMOVE, \
+                                                   ACTION_UPGRADE: CONFIRM_UPGRADE, \
+                                                   ACTION_GET_PKG: CONFIRM_GET_PKG, \
+                                                   ACTION_GET_SOURCE: CONFIRM_GET_SOURCE, \
+                                                   ACTION_GET_SPDX: CONFIRM_GET_SPDX, \
+                                                   ACTION_GET_ALL: CONFIRM_GET_ALL}
+                            confirm_type = install_type_switch.get(self.install_type)
 
                             hkey = HotkeyExitWindow(self.screen, confirm_type)
                             if hkey == "y":
@@ -454,6 +471,9 @@ class TuiCommand(commands.Command):
                         break
                     if self.install_type == ACTION_GET_PKG:
                         self.GET_RKG(selected_pkgs)
+                        break
+                    if self.install_type == ACTION_GET_ALL:
+                        self.GET_ALL(selected_pkgs)
                         break
                     else:
                         if custom_type == SAMPLE_INSTALL:
@@ -636,7 +656,7 @@ class TuiCommand(commands.Command):
         if pkgTypeList != None:
             display_pkgs = self.PkgType_filter(display_pkgs, packages, pkgTypeList)
 
-            actions = (ACTION_REMOVE, ACTION_UPGRADE, ACTION_GET_PKG, ACTION_GET_SOURCE, ACTION_GET_SPDX)
+            actions = (ACTION_REMOVE, ACTION_UPGRADE, ACTION_GET_PKG, ACTION_GET_SOURCE, ACTION_GET_SPDX, ACTION_GET_ALL)
             if self.install_type in actions:
                 for pkg in packages:
                     if pkg not in ypl.installed:
@@ -710,7 +730,7 @@ class TuiCommand(commands.Command):
                 display_pkgs = sorted(display_pkgs)
 
                 # clean the _transaction
-                self.base.close()
+                #self.base.close()
                 self.base._transaction = None
 
         if len(display_pkgs)==0:
