@@ -41,9 +41,9 @@ _TXT_ROOT_TITLE = "Package Installer"
 Install_actions = [("Install", "Choose it to install packages."), \
                    ("Remove", "Choose it to remove packages"), \
                    ("Upgrade", "Choose it to upgrade packages"), \
-                   ("Create package archive(rpm)", "Choose it to create package archive"), \
-                   ("Create source archive(src.rpm)", "Choose it to create source archive"), \
-                   ("Create spdx archive(spdx)", "Choose it to create SPDX archive"), \
+                   ("Create binary package archives(rpm)", "Choose it to create package archive"), \
+                   ("Create a source archive(src.rpm)", "Choose it to create source archive"), \
+                   ("Create an spdx archive(spdx)", "Choose it to create SPDX archive"), \
                    ("Create archive(rpm, src.rpm and spdx files)", "Choose it to create all archive") \
                   ]
 

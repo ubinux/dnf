@@ -208,13 +208,18 @@ def StartHotkeyScreen(sText):
     snack.hotkeys["PD"] = 0x800c
     snack.hotkeys[0x800c] = "PD"
 
+
     # Start snack's screen
     screen = snack.SnackScreen()
-    screen.drawRootText(0, 0, sText)
+
+    #obtain the width  of screen to calculate the left value for drawRootText=
+    (width, height) = GetWindowSize(screen)
+    Left_Length = (width - len(sText))/2
+
+    screen.drawRootText(int(Left_Length), 0, sText)
     screen.pushHelpLine(" ")
       
     # Window size check
-    (width, height) = GetWindowSize(screen)
     if width < 80 or height < 24:
         StopHotkeyScreen(screen)
         screen = None
@@ -334,8 +339,11 @@ def HotkeyInfoWindow(insScreen, sTitle, sText, iWidth, iHeight, \
     # Create Grid instance
     g = snack.GridForm(insScreen, sTitle, 1, 3)
     g.add(t1, 0, 0)
-    g.add(t2, 0, 1, (-1, 0, -1, 0))
-    g.add(t3, 0, 2, (0, 0, 0, -1))
+    #g.add(t2, 0, 1, (-1, 0, -1, 0))
+    #g.add(t3, 0, 2, (0, 0, 0, -1))
+
+    insScreen.pushHelpLine("  "+sHtext)
+
     for x in dctHotkeys.keys():
         g.addHotKey(x)
     # Display window
@@ -345,6 +353,7 @@ def HotkeyInfoWindow(insScreen, sTitle, sText, iWidth, iHeight, \
             break
 
     # Return
+    insScreen.popHelpLine()
     insScreen.popWindow()
     return dctHotkeys[result]
 
@@ -434,7 +443,7 @@ def PKGINSTTypeInfoWindow(insScreen, sSubject, sDescription):
 
     # Display information window
     HotkeyInfoWindow(insScreen, "Install type information", main_text, \
-                     main_width, main_height, {"b" : "b", "B" : "b"}, "B:Back")
+                     main_width, main_height, {"F4" : "b"}, "F4:Back")
 
 #------------------------------------------------------------
 # def PKGINSTTypeWindowCtrl()
@@ -506,7 +515,7 @@ def PKGINSTTypeWindow(insScreen, lstSubject, iPosition):
     idx = 0
     for idx in range(len(lstSubject)):
         str = "%s" % lstSubject[idx][0]
-        li.append(str, idx)
+        li.append(str+"  --->", idx)
 
     num_subject = len(lstSubject)
     if num_subject > iPosition:
@@ -515,7 +524,7 @@ def PKGINSTTypeWindow(insScreen, lstSubject, iPosition):
         li.setCurrent(num_subject - 1)
     # Create Text instance
     t1 = snack.Textbox(main_width, 1, "-" * main_width)
-    text = "SPACE/ENTER:select  I:Info  X:eXit"
+    text = "  F5:Info  F10:Exit"
     t2 = snack.Textbox(main_width, 1, text)
 
     # Create Grid instance
@@ -526,10 +535,8 @@ def PKGINSTTypeWindow(insScreen, lstSubject, iPosition):
 
     myhotkeys = {"ENTER" : "ENTER", \
                  " "     : " ", \
-                 "i"     : "i", \
-                 "I"     : "i", \
-                 "x"     : "x", \
-                 "X"     : "x"}
+                 "F5"     : "i", \
+                 "F10"     : "x"}
     for x in myhotkeys.keys():
         g.addHotKey(x)
 
@@ -612,7 +619,7 @@ def PKGINSTActionWindow(insScreen, lstSubject, iPosition):
     idx = 0
     for idx in range(len(lstSubject)):
         str = "%s" % lstSubject[idx][0]
-        li.append(str, idx)
+        li.append(str+"  --->", idx)
 
     num_subject = len(lstSubject)
     if num_subject > iPosition:
@@ -621,21 +628,20 @@ def PKGINSTActionWindow(insScreen, lstSubject, iPosition):
         li.setCurrent(num_subject - 1)
     # Create Text instance
     t1 = snack.Textbox(main_width, 1, "-" * main_width)
-    text = "SPACE/ENTER:select  I:Info  X:eXit"
+    text = "  F5:Info  F10:Exit" + "\n Fffff"
     t2 = snack.Textbox(main_width, 1, text)
 
     # Create Grid instance
-    g = snack.GridForm(insScreen, "Select your operation", 1, 3)
-    g.add(li, 0, 0)
-    g.add(t1, 0, 1, (-1, 0, -1, 0))
-    g.add(t2, 0, 2, (0, 0, 0, -1))
+    g = snack.GridFormHelp(insScreen, "Select your operation", "F1", 1, 5)
+    insScreen.pushHelpLine(text)
+    g.add(li, 0, 0, (0, 0, 0, 0))
+    #g.add(t1, 0, 1, (-1, 0, -1, 0))
+    #g.add(t2, 0, 2, (0, 0, 0, -1))
 
     myhotkeys = {"ENTER" : "ENTER", \
                  " "     : " ", \
-                 "i"     : "i", \
-                 "I"     : "i", \
-                 "x"     : "x", \
-                 "X"     : "x"}
+                 "F5"     : "i", \
+                 "F10"     : "x"}
     for x in myhotkeys.keys():
         g.addHotKey(x)
 
@@ -646,6 +652,8 @@ def PKGINSTActionWindow(insScreen, lstSubject, iPosition):
             idx = li.current()
             break
 
+    #return
+    insScreen.popHelpLine()
     insScreen.popWindow()
     return (myhotkeys[result], idx)
 
@@ -730,7 +738,7 @@ def PKGCUSActionWindow(insScreen, lstSubject, iPosition, group_hotkey=False):
     idx = 0
     for idx in range(len(lstSubject)):
         str = "%s" % lstSubject[idx][0]
-        li.append(str, idx)
+        li.append(str+"  --->", idx)
 
     num_subject = len(lstSubject)
     if num_subject > iPosition:
@@ -740,31 +748,30 @@ def PKGCUSActionWindow(insScreen, lstSubject, iPosition, group_hotkey=False):
     # Create Text instance
     t1 = snack.Textbox(main_width, 1, "-" * main_width)
     if group_hotkey == True:
-        text = "SPACE/ENTER:select  B:Back  I:Info  G:Group X:eXit"
+        text = "  F4:Back  F5:Info  F6:Group  F10:eXit"
+        g = snack.GridForm(insScreen, "Select group", 1, 3)
     else:
-        text = "SPACE/ENTER:select  B:Back  I:Info  X:eXit"
+        text = "  F4:Back  F5:Info  F10:eXit"
+        g = snack.GridForm(insScreen, "Select install type", 1, 3)
 
     t2 = snack.Textbox(main_width, 1, text)
 
+    #insScreen.pushHelpLine(" ")
+    insScreen.pushHelpLine(text)
     # Create Grid instance
-    g = snack.GridForm(insScreen, "Select your operation", 1, 3)
     g.add(li, 0, 0)
-    g.add(t1, 0, 1, (-1, 0, -1, 0))
-    g.add(t2, 0, 2, (0, 0, 0, -1))
+    #g.add(t1, 0, 1, (-1, 0, -1, 0))
+    #g.add(t2, 0, 2, (0, 0, 0, -1))
 
     myhotkeys = {"ENTER": "ENTER", \
                  " ": " ", \
-                 "i": "i", \
-                 "I": "i", \
-                 "x": "x", \
-                 "X": "x", \
-                 "b": "b", \
-                 "B": "b"}
+                 "F5": "i", \
+                 "F10": "x", \
+                 "F4": "b"}
 
     #If group exists, add group_hotkey
     if group_hotkey == True:
-        myhotkeys["g"] = "g"
-        myhotkeys["G"] = "g"
+        myhotkeys["F6"] = "g"
 
     for x in myhotkeys.keys():
         g.addHotKey(x)
@@ -776,6 +783,8 @@ def PKGCUSActionWindow(insScreen, lstSubject, iPosition, group_hotkey=False):
             idx = li.current()
             break
 
+    #return
+    insScreen.popHelpLine()
     insScreen.popWindow()
     return (myhotkeys[result], idx)
 
@@ -846,7 +855,7 @@ def PKGINSTPackageInfoWindow(insScreen, pkg):
 
     # Display information window
     HotkeyInfoWindow(insScreen, "Package information", main_join_text, \
-                     main_width, main_height, {"b" : "b", "B" : "b"}, "B:Back")
+                     main_width, main_height, {"F4" : "b"}, "F4:Back")
 
 #------------------------------------------------------------
 # def ButtonInfoWindow()
@@ -1076,9 +1085,11 @@ def PKGTypeSelectWindow(insScreen, pkgTypeList, position = 0):
     else:
         scroll = 0
 
-    hotkey_base_text = "SPACE/ENTER:select/unselect  N:Next  B:Back  I:Info  X:eXit"
+    hotkey_base_text = "  F3:Next  F4:Back  F5:Info  F10:eXit"
     wrapper = textwrap.TextWrapper(width = main_width)
     hotkey_text = wrapper.fill(hotkey_base_text)
+
+    insScreen.pushHelpLine(hotkey_text)
     if hotkey_text != hotkey_base_text:
         main_height -= 1
         hotkey_line = 2
@@ -1116,21 +1127,17 @@ def PKGTypeSelectWindow(insScreen, pkgTypeList, position = 0):
 
     g = snack.GridForm(insScreen, title, 1, 5)
    
-    g.add(t1, 0, 2) 
-    g.add(t2, 0, 4, (0, 0, 0, -1))
+    #g.add(t1, 0, 2) 
+    #g.add(t2, 0, 4, (0, 0, 0, -1))
     g.add(li, 0, 0)
 
 ############# append test key 'S' ####
     myhotkeys = {"ENTER" : "ENTER", \
                  " "     : " ", \
-                 "n"     : "n", \
-                 "N"     : "n", \
-                 "b"     : "b", \
-                 "B"     : "b", \
-                 "i"     : "i", \
-                 "I"     : "i", \
-                 "x"     : "x", \
-                 "X"     : "x"}
+                 "F3"     : "n", \
+                 "F4"     : "b", \
+                 "F5"     : "i", \
+                 "F10"     : "x"}
 
     for x in myhotkeys.keys():
         g.addHotKey(x)
@@ -1157,6 +1164,9 @@ def PKGTypeSelectWindow(insScreen, pkgTypeList, position = 0):
                 li.setCurrent(idx)
             else:
                 break
+
+    #return
+    insScreen.popHelpLine()
     insScreen.popWindow()
     return (myhotkeys[result], idx, pkgTypeList)
 
@@ -1226,10 +1236,12 @@ def PKGINSTPackageWindow(insScreen, packages, selected_packages, iPosition, lTar
         scroll = 0
 
     if group_hotkey == True:
-        hotkey_base_text = "SPACE/ENTER:select/unselect  A:select/unselect All  R:seaRch N:Next  B:Back  I:Info G:Group X:eXit"
+        hotkey_base_text = "  F1:select/unselect All  F2:Search  F3:Next  F4:Back  F5:Info  F6:Group  F10:Exit"
     else:
-        hotkey_base_text = "SPACE/ENTER:select/unselect  A:select/unselect All  R:seaRch N:Next  B:Back  I:Info X:eXit"
+        hotkey_base_text = "  F1:select/unselect All  F2:Search  F3:Next  F4:Back  F5:Info  F10:Exit"
 
+    #insScreen.pushHelpLine(" ")
+    insScreen.pushHelpLine(hotkey_base_text)
     wrapper = textwrap.TextWrapper(width = main_width)
     hotkey_text = wrapper.fill(hotkey_base_text)
     if hotkey_text != hotkey_base_text:
@@ -1279,12 +1291,12 @@ def PKGINSTPackageWindow(insScreen, packages, selected_packages, iPosition, lTar
     else:
         title = "Select package - (%s)" % search
 
-    g = snack.GridForm(insScreen, title, 1, 5)
+    g = snack.GridForm(insScreen, title, 1, 3)
     g.add(li, 0, 0)
     g.add(t1, 0, 1, (-1, 0, -1, 0))
-    g.add(t2, 0, 2)
-    g.add(t3, 0, 3, (-1, 0, -1, 0))
-    g.add(t4, 0, 4, (0, 0, 0, -1))
+    g.add(t2, 0, 2, (0, 0, 0, 0))
+    #g.add(t3, 0, 3, (-1, 0, -1, 0))
+    #g.add(t4, 0, 4, (0, 0, 0, -1))
 
 
 
@@ -1292,23 +1304,16 @@ def PKGINSTPackageWindow(insScreen, packages, selected_packages, iPosition, lTar
 ############# append test key 'S' ####
     myhotkeys = {"ENTER" : "ENTER", \
                  " "     : " ", \
-                 "n"     : "n", \
-                 "N"     : "n", \
-                 "b"     : "b", \
-                 "B"     : "b", \
-                 "r"     : "r", \
-                 "R"     : "r", \
-                 "i"     : "i", \
-                 "I"     : "i", \
-                 "x"     : "x", \
-                 "X"     : "x", \
-                 "a"     : "a", \
-                 "A"     : "a"}
+                 "F3"     : "n", \
+                 "F4"     : "b", \
+                 "F2"     : "r", \
+                 "F5"     : "i", \
+                 "F10"     : "x", \
+                 "F1"     : "a"}
 
     #If group exists, add group_hotkey
     if group_hotkey == True:
-        myhotkeys["g"] = "g"
-        myhotkeys["G"] = "g"
+        myhotkeys["F6"] = "g"
 
     for x in myhotkeys.keys():
         g.addHotKey(x)
@@ -1346,6 +1351,8 @@ def PKGINSTPackageWindow(insScreen, packages, selected_packages, iPosition, lTar
             else:
                 break
 
+    #return
+    insScreen.popHelpLine()
     insScreen.popWindow()
     return (myhotkeys[result], idx, selected_packages)
 
@@ -1484,7 +1491,7 @@ def ConfirmGplv3Window(insScreen, packages):
     else:
         scroll = 0
 
-    hotkey_base_text = "These GPLv3 packages are depended  N:Next  B:Back  X:eXit"
+    hotkey_base_text = "These GPLv3 packages are depended"
     wrapper = textwrap.TextWrapper(width = main_width)
     hotkey_text = wrapper.fill(hotkey_base_text)
     if hotkey_text != hotkey_base_text:
@@ -1508,21 +1515,21 @@ def ConfirmGplv3Window(insScreen, packages):
     t1 = snack.Textbox(main_width, 1, "-" * main_width)
     t4 = snack.Textbox(main_width, hotkey_line, hotkey_text)
 
+    # Create the help line
+    insScreen.pushHelpLine("  F3:Next  F4:Back  F10:Exit")
+
     # Create Grid instance
     title = "GPLv3 that be depended"
 
     g = snack.GridForm(insScreen, title, 1, 5)
     g.add(li, 0, 0)
     g.add(t1, 0, 1, (-1, 0, -1, 0))
-    g.add(t4, 0, 4, (0, 0, 0, -1))
+    g.add(t4, 0, 4, (0, 0, 0, 0))
 
 ############# append test key 'S' ####
-    myhotkeys = {"n"     : "n", \
-                 "N"     : "n", \
-                 "b"     : "b", \
-                 "B"     : "b", \
-                 "x"     : "x", \
-                 "X"     : "x"}
+    myhotkeys = {"F3"     : "n", \
+                 "F4"     : "b", \
+                 "F10"     : "x"}
     for x in myhotkeys.keys():
         g.addHotKey(x)
 #####################################
@@ -1534,6 +1541,7 @@ def ConfirmGplv3Window(insScreen, packages):
 
         elif myhotkeys[result] == "x":
             # exit
+            insScreen.popHelpLine()
             insScreen.popWindow()
             exit_hkey = HotkeyExitWindow(insScreen)
             if exit_hkey == "y":
