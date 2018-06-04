@@ -40,7 +40,7 @@ index b88ddb4..71e697b 100644
             "
  
 -SRCREV = "564c44667c7014843fa6f1732621093114ec59b2"
-+SRC_URI_append_class-target = "file://oe-remote-repo.repo.sample"
++SRC_URI_append_class-target = "file://oe-remote.repo.sample"
 +
 +SRCREV = "2cb2fde07423d90aee40ba249a4231e85761496a"
  UPSTREAM_CHECK_GITTAGREGEX = "(?P<pver>\d+(\.\d+)+)"
