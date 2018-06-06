@@ -748,10 +748,10 @@ def PKGCUSActionWindow(insScreen, lstSubject, iPosition, group_hotkey=False):
     # Create Text instance
     t1 = snack.Textbox(main_width, 1, "-" * main_width)
     if group_hotkey == True:
-        text = "  F4:Back  F5:Info  F6:Group  F10:eXit"
+        text = "  F4:Back  F5:Info  F6:Group  F10:Exit"
         g = snack.GridForm(insScreen, "Select group", 1, 3)
     else:
-        text = "  F4:Back  F5:Info  F10:eXit"
+        text = "  F4:Back  F5:Info  F10:Exit"
         g = snack.GridForm(insScreen, "Select install type", 1, 3)
 
     t2 = snack.Textbox(main_width, 1, text)
@@ -1085,7 +1085,7 @@ def PKGTypeSelectWindow(insScreen, pkgTypeList, position = 0):
     else:
         scroll = 0
 
-    hotkey_base_text = "  F3:Next  F4:Back  F5:Info  F10:eXit"
+    hotkey_base_text = "  F3:Next  F4:Back  F5:Info  F10:Exit"
     wrapper = textwrap.TextWrapper(width = main_width)
     hotkey_text = wrapper.fill(hotkey_base_text)
 
@@ -1125,7 +1125,7 @@ def PKGTypeSelectWindow(insScreen, pkgTypeList, position = 0):
     # Create Grid instance
     title = "Customize special type packages"
 
-    g = snack.GridForm(insScreen, title, 1, 5)
+    g = snack.GridForm(insScreen, title, 1, 3)
    
     #g.add(t1, 0, 2) 
     #g.add(t2, 0, 4, (0, 0, 0, -1))
