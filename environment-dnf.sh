@@ -112,7 +112,7 @@ if [ ! -f $HIDDEN_ROOTFS/etc/rpmrc ]; then
     echo -n "arch_compat: ${MACHINE_ARCH}: all any noarch ${ARCH} ${MACHINE_ARCH}" > $HIDDEN_ROOTFS/etc/rpmrc
     for line in `ls $REPO_DIR/rpm`;do
         if [ "$line" != "all" ] && [ "$line" != "any" ] && [ "$line" != "noarch" ] && [ "$line" != "${ARCH}" ] && [ "$line" != "${MACHINE_ARCH}" ]; then
-            echo " $line:" >> $HIDDEN_ROOTFS/etc/rpmrc
+            echo -n " $line" >> $HIDDEN_ROOTFS/etc/rpmrc
         fi
     done
     sed -i "s/:$//g" $HIDDEN_ROOTFS/etc/rpmrc
