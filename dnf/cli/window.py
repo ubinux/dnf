@@ -524,7 +524,7 @@ def PKGINSTTypeWindow(insScreen, lstSubject, iPosition):
         li.setCurrent(num_subject - 1)
     # Create Text instance
     t1 = snack.Textbox(main_width, 1, "-" * main_width)
-    text = "  F5:Info  F10:Exit"
+    text = "  F5:Info  F9:Exit"
     t2 = snack.Textbox(main_width, 1, text)
 
     # Create Grid instance
@@ -536,7 +536,7 @@ def PKGINSTTypeWindow(insScreen, lstSubject, iPosition):
     myhotkeys = {"ENTER" : "ENTER", \
                  " "     : " ", \
                  "F5"     : "i", \
-                 "F10"     : "x"}
+                 "F9"     : "x"}
     for x in myhotkeys.keys():
         g.addHotKey(x)
 
@@ -628,7 +628,7 @@ def PKGINSTActionWindow(insScreen, lstSubject, iPosition):
         li.setCurrent(num_subject - 1)
     # Create Text instance
     t1 = snack.Textbox(main_width, 1, "-" * main_width)
-    text = "  F5:Info  F10:Exit" + "\n Fffff"
+    text = "  F5:Info  F9:Exit" + "\n Fffff"
     t2 = snack.Textbox(main_width, 1, text)
 
     # Create Grid instance
@@ -641,7 +641,7 @@ def PKGINSTActionWindow(insScreen, lstSubject, iPosition):
     myhotkeys = {"ENTER" : "ENTER", \
                  " "     : " ", \
                  "F5"     : "i", \
-                 "F10"     : "x"}
+                 "F9"     : "x"}
     for x in myhotkeys.keys():
         g.addHotKey(x)
 
@@ -748,10 +748,10 @@ def PKGCUSActionWindow(insScreen, lstSubject, iPosition, group_hotkey=False):
     # Create Text instance
     t1 = snack.Textbox(main_width, 1, "-" * main_width)
     if group_hotkey == True:
-        text = "  F4:Back  F5:Info  F6:Group  F10:Exit"
+        text = "  F4:Back  F5:Info  F6:Group  F9:Exit"
         g = snack.GridForm(insScreen, "Select group", 1, 3)
     else:
-        text = "  F4:Back  F5:Info  F10:Exit"
+        text = "  F4:Back  F5:Info  F9:Exit"
         g = snack.GridForm(insScreen, "Select install type", 1, 3)
 
     t2 = snack.Textbox(main_width, 1, text)
@@ -766,7 +766,7 @@ def PKGCUSActionWindow(insScreen, lstSubject, iPosition, group_hotkey=False):
     myhotkeys = {"ENTER": "ENTER", \
                  " ": " ", \
                  "F5": "i", \
-                 "F10": "x", \
+                 "F9": "x", \
                  "F4": "b"}
 
     #If group exists, add group_hotkey
@@ -1085,7 +1085,7 @@ def PKGTypeSelectWindow(insScreen, pkgTypeList, position = 0):
     else:
         scroll = 0
 
-    hotkey_base_text = "  F3:Next  F4:Back  F5:Info  F10:Exit"
+    hotkey_base_text = "  F3:Next  F4:Back  F5:Info  F9:Exit"
     wrapper = textwrap.TextWrapper(width = main_width)
     hotkey_text = wrapper.fill(hotkey_base_text)
 
@@ -1137,7 +1137,7 @@ def PKGTypeSelectWindow(insScreen, pkgTypeList, position = 0):
                  "F3"     : "n", \
                  "F4"     : "b", \
                  "F5"     : "i", \
-                 "F10"     : "x"}
+                 "F9"     : "x"}
 
     for x in myhotkeys.keys():
         g.addHotKey(x)
@@ -1236,9 +1236,9 @@ def PKGINSTPackageWindow(insScreen, packages, selected_packages, iPosition, lTar
         scroll = 0
 
     if group_hotkey == True:
-        hotkey_base_text = "  F1:select/unselect All  F2:Search  F3:Next  F4:Back  F5:Info  F6:Group  F10:Exit"
+        hotkey_base_text = "  F1:select/unselect All  F2:Search  F3:Next  F4:Back  F5:Info  F6:Group  F9:Exit"
     else:
-        hotkey_base_text = "  F1:select/unselect All  F2:Search  F3:Next  F4:Back  F5:Info  F10:Exit"
+        hotkey_base_text = "  F1:select/unselect All  F2:Search  F3:Next  F4:Back  F5:Info  F9:Exit"
 
     #insScreen.pushHelpLine(" ")
     insScreen.pushHelpLine(hotkey_base_text)
@@ -1308,7 +1308,7 @@ def PKGINSTPackageWindow(insScreen, packages, selected_packages, iPosition, lTar
                  "F4"     : "b", \
                  "F2"     : "r", \
                  "F5"     : "i", \
-                 "F10"     : "x", \
+                 "F9"     : "x", \
                  "F1"     : "a"}
 
     #If group exists, add group_hotkey
@@ -1516,7 +1516,7 @@ def ConfirmGplv3Window(insScreen, packages):
     t4 = snack.Textbox(main_width, hotkey_line, hotkey_text)
 
     # Create the help line
-    insScreen.pushHelpLine("  F3:Next  F4:Back  F10:Exit")
+    insScreen.pushHelpLine("  F3:Next  F4:Back  F9:Exit")
 
     # Create Grid instance
     title = "GPLv3 that be depended"
@@ -1529,7 +1529,7 @@ def ConfirmGplv3Window(insScreen, packages):
 ############# append test key 'S' ####
     myhotkeys = {"F3"     : "n", \
                  "F4"     : "b", \
-                 "F10"     : "x"}
+                 "F9"     : "x"}
     for x in myhotkeys.keys():
         g.addHotKey(x)
 #####################################
