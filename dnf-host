@@ -21,7 +21,7 @@ usage () {
         source $WORKDIR/.env-dnf
         echo "dnf-host is only used on host to manage packages for target."
         echo ""
-        echo "1. If you want to create a new rootfs, you must init your envirment first."
+        echo "1. If you want to create a new rootfs, you must init your environment first."
         echo "   \$ dnf-host init "
         echo ""
         echo "2. If you want to manage your rootfs that has already create by dnf-host."
@@ -153,7 +153,7 @@ dnf-init() {
         DEFINE_REPO_DIR=${DEFINE_REPO_DIR#*//}
     fi
 
-    environment-dnf.sh $HIDDEN_ROOTFS_DIR $DEFINE_REPO_DIR $DEFINE_SPDX_REPO_DIR $DEFINE_SPDX_DESTINATION_DIR $DEFINE_SRPM_REPO_DIR $DEFINE_SRPM_DESTINATION_DIR $DEFINE_RPM_REPO_DIR $DEFINE_RPM_DESTINATION_DIR $DEFAULT_ROOTFS_DIR
+    environment-dnf.sh $HIDDEN_ROOTFS_DIR $DEFINE_REPO_DIR $DEFINE_SPDX_REPO_DIR $DEFINE_SPDX_DESTINATION_DIR $DEFINE_SRPM_REPO_DIR $DEFINE_SRPM_DESTINATION_DIR $DEFINE_RPM_REPO_DIR $DEFINE_RPM_DESTINATION_DIR $DEFINE_ROOTFS_DIR
 }
 
 dnf-show() {
