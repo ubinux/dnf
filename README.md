@@ -68,49 +68,70 @@ Make sure you have prepared the following:
 
 If you want to ctreate an empty rootfs, you have to run "dnf-host init".
 
-```
 $ dnf-host init
+```
 Deleting temp rootfs......
 =================================================================
 Enter repo directory (default: /home/test/dnf/oe_repo): 
 You are about to set repo directory to "/home/test/dnf/oe_repo". Are you sure[Y/n]?
+```
+The system will read the repodata from the directory.
 
+```
 =================================================================
 Enter rootfs destination directory (default: /opt/ubq/devkit/x86): 
 You are about to set rootfs destination directory to "/opt/ubq/devkit/x86". Are you sure[Y/n]?
+```
+Save the rootfs to rootfs destination directory.
 
+```
 =================================================================
 Enter SPDX repo directory (default: /home/test/dnf/spdx_repo): 
 You are about to set SPDX repo directory to "/home/test/dnf/spdx_repo". Are you sure[Y/n]?
+```
+Read the SPDX repodata form the directory.
 
+```
 =================================================================
 Enter SPDX file destination directory (default: /home/test/dnf/spdx_download): 
 You are about to set SPDX file destination directory to "/home/test/dnf/spdx_download". Are you sure[Y/n]?
-
+```
+Save the SPDX file to the directory.
+```
 =================================================================
 Enter SRPM repo directory (default: /home/test/dnf/srpm_repo): 
 You are about to set SRPM repo directory to "/home/test/dnf/srpm_repo". Are you sure[Y/n]?
+```
+Read the SRPM repodata form the directory.
 
+```
 =================================================================
 Enter SRPM file destination directory (default: /home/test/dnf/srpm_download): 
 You are about to set SRPM file destination directory to "/home/test/dnf/srpm_download". Are you sure[Y/n]?
+```
+Save the SRPM file to the directory.
 
+```
 =================================================================
 Enter RPM repo directory (default: /home/test/dnf/oe_repo): 
 You are about to set RPM repo directory to "/home/test/dnf/oe_repo". Are you sure[Y/n]?
+```
+Read the RPM repodata form the directory.
 
+```
 =================================================================
 Enter RPM file destination directory (default: /home/test/dnf/rpm_download): 
 You are about to set RPM file destination directory to "/home/test/dnf/rpm_download". Are you sure[Y/n]?
+```
+Save the RPM file to the directory.
 
+```
  /home/test/dnf/.rootfs-x86 is not exist. mkdir /home/test/dnf/.rootfs-x86. 
 Creating repo
-
 
   Note
     - Because dnf-host reads configuration from `pwd`, please make sure the above steps are in the same directory same as you run init.
     - Dnf-host will save what you have done continuous until you run init again.
-
 ```
 
 After init, then, you can manage packages by TUI or command line.
@@ -148,7 +169,7 @@ After init, then, you can manage packages by TUI or command line.
         F5:Info  F9:Exit
 
 ```
-#### (1) install
+#### 3.1.3.1 install
 &emsp;&emsp; After enter into "install",the tui will list to user some way to install package.
 ```
         ┌─────────────────────────┤ Select install type ├──────────────────────────┐
@@ -181,7 +202,7 @@ After init, then, you can manage packages by TUI or command line.
 	    as the initialization manager.
 
 ```
-#### (2) dnf-host TUI can help you filter GPLv3
+##### (1). dnf-host TUI can help you filter GPLv3
 &emsp;&emsp;If you select "install" and "NEW" in above, dnf-host will ask you whether you want to install packages
 	 with license of GPLv3.
 ```	 
@@ -204,7 +225,7 @@ After init, then, you can manage packages by TUI or command line.
        - Yes : GPLv3 packages can be selected as same as the other packages.
  ```
 
- #### (3) customize packages
+ ##### (2). customize packages
 ```
         ┌────────────────────────────┤ Select package ├────────────────────────────┐
         │                                                                          │
@@ -237,7 +258,7 @@ After init, then, you can manage packages by TUI or command line.
 
 ```
 
-#### (4) customize packages type
+##### (3). customize packages type
 &emsp;&emsp;You can select the package type that you want to install into rootfs.
 ```
         ┌───────────────────┤ Customize special type packages ├────────────────────┐
@@ -269,7 +290,7 @@ After init, then, you can manage packages by TUI or command line.
 	-  ptest : Python unit testing framework
 	
 ```
-#### (5) Confirm install
+##### (4). Confirm install
 &emsp;&emsp;If you select "No" in the "license" interface, but there is GPLV3 packages in the dependencies,
 <br>&emsp;&emsp;a dialog box will ask your decision.
 ```
@@ -295,7 +316,7 @@ After init, then, you can manage packages by TUI or command line.
 	F3:Next  F4:Back  F9:Exit
 
 ```
-#### (6) Load package file
+##### (5). Load package file
 &emsp;&emsp;After select "Load package file", when user enter the name of configuration file and enter
 "OK", dnf-host will install the package which the configuration list.
 ```
@@ -314,7 +335,7 @@ After init, then, you can manage packages by TUI or command line.
            └────────────────────────────────────────────────────────┘
 ```
 
-#### (7) Reference   
+##### (6). Reference   
 &emsp;&emsp;In "Select install type" interface, user can choose Reference1 to build busybox based root 
 file system or Reference2 to build systemd based root file system.
 ```
@@ -331,7 +352,7 @@ file system or Reference2 to build systemd based root file system.
                   │                                          │
                   └──────────────────────────────────────────┘
 ```
-#### (8) Remove
+#### 3.1.3.2 Remove
 &emsp;&emsp;You can choose the package that you want to upgrade after enter "Remove" in main interface.
 ```
         ┌────────────────────────────┤ Select package ├────────────────────────────┐
@@ -363,7 +384,7 @@ file system or Reference2 to build systemd based root file system.
           - [-] Means the package has been selected, installed and will be removed.
 
 ```
-#### (9) Upgrade
+#### 3.1.3.3 Upgrade
 &emsp;&emsp;You can choose the package that you want to upgrade after enter "Upgrade" in main interface.
 ```
         ┌────────────────────────────┤ Select package ├────────────────────────────┐
@@ -394,7 +415,7 @@ file system or Reference2 to build systemd based root file system.
                 select it by pressing Space or Enter.
           - [U] Means the package has been selected, installed and will be upgraded.
 ```
-#### (10) manage source archive & spdx archive
+#### 3.1.3.4 manage source archive & spdx archive
 &emsp;&emsp;You can choose the package that you want to get spdx/srpm archive after enter "Create spdx archive" or "Create spdx archive" in main interface.
 ```
         ┌────────────────────────────┤ Select package ├────────────────────────────┐
@@ -423,7 +444,7 @@ file system or Reference2 to build systemd based root file system.
           - []  Means the package has not been selected.
           - [S] Means the package has been selected, installed and will be used to created.
 ```
-#### (11) manage binary package archives
+#### 3.1.3.5 manage binary package archives
 &emsp;&emsp;You can choose the package that you want to get binary package archive after enter "Create binary package archives(rpm)" in main interface.
 ```
         ┌────────────────────────────┤ Select package ├────────────────────────────┐
@@ -452,7 +473,7 @@ file system or Reference2 to build systemd based root file system.
           - []  Means the package has not been selected.
           - [R] Means the package has been selected, installed and will be used to created.
 ```
-#### (12) manage archive
+#### 3.1.3.6 manage archive
 &emsp;&emsp;You can choose the package that you want to get archive after enter "Create archive(rpm, src.rpm and spdx files)" in main interface.
 ```
         ┌────────────────────────────┤ Select package ├────────────────────────────┐
