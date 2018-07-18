@@ -190,12 +190,12 @@ class TuiCommand(commands.Command):
         f.close()
         return selected_pkgs
 
-    def Save_ConfigFile(self, selected_pkgs, mode):
+    def Save_ConfigFile(self, selected_pkgs, file_name, mode):
         save_list = []
         for pkg in selected_pkgs:
             save_list.append(pkg.name)
 
-        f = open(".config", mode)
+        f = open(file_name, mode)
         for line in save_list:
             f.write(line + '\n')
         f.close()
@@ -351,10 +351,12 @@ class TuiCommand(commands.Command):
                         StopHotkeyScreen(self.screen)
                         self.screen = None
                         sys.exit(0)
-                    get_text = f.read()
-                    config_list = get_text.split('\n')
-                    config_list.pop()
-                    stage = STAGE_PROCESS
+                    #get_text = f.read()
+                    #config_list = get_text.split('\n')
+                    #config_list.pop()
+                    #stage = STAGE_PROCESS
+                    self.CONFIG_FILE = config_file
+                    stage = STAGE_PACKAGE
 
                 #==============================
                 # Grouplist 
@@ -466,6 +468,17 @@ class TuiCommand(commands.Command):
                 # Process function
                 # ==============================
                 elif stage == STAGE_PROCESS:
+                    if self.install_type == ACTION_INSTALL:
+                        self.CONFIG_FILE = ".config"
+                        (result, self.CONFIG_FILE) = PKGINSTPathInputWindow(self.screen, \
+                                                      False, \
+                                                      "  Config File  ", \
+                                                      "Enter the name of configuration file you wish to save:", \
+                                                      self.CONFIG_FILE )
+                    if result == "cancel":
+                        # save config file
+                        self.CONFIG_FILE = ".config"
+
                     if self.install_type == ACTION_GET_SOURCE or self.install_type == ACTION_GET_SPDX:
                         self.GET_SOURCE_or_SPDX(selected_pkgs)
                         break
@@ -476,31 +489,20 @@ class TuiCommand(commands.Command):
                         self.GET_ALL(selected_pkgs)
                         break
                     else:
-                        if custom_type == SAMPLE_INSTALL:
-                            hkey = HotkeyExitWindow(self.screen, CONFIRM_INSTALL)
-                            if hkey == "n":
-                                stage = STAGE_CUSTOM_TYPE
-                                continue
+                        for pkg in selected_pkgs:           #selected_pkgs
+                            if self.install_type == ACTION_INSTALL:
+                                s_line = ["install", pkg.name]
+                            elif self.install_type == ACTION_REMOVE:
+                                s_line = ["remove", pkg.name]
+                            elif self.install_type == ACTION_UPGRADE:
+                                s_line = ["upgrade", pkg.name]
+                            self.run_dnf_command(s_line)
 
-                            for pkg in config_list:
-                                s_line = ["install", pkg]
-                                self.run_dnf_command(s_line)
-                                
-                        else:
-                            for pkg in selected_pkgs:           #selected_pkgs
-                                if self.install_type == ACTION_INSTALL:
-                                    s_line = ["install", pkg.name]
-                                elif self.install_type == ACTION_REMOVE:
-                                    s_line = ["remove", pkg.name]
-                                elif self.install_type == ACTION_UPGRADE:
-                                    s_line = ["upgrade", pkg.name]
-                                self.run_dnf_command(s_line)
-
-                        if self.install_type == ACTION_INSTALL:  #selected_pkgs_spec
-                            if custom_type != SAMPLE_INSTALL:
-                                self.Save_ConfigFile(selected_pkgs, "w")
-                                if selected_pkgs_spec:
-                                    self.Save_ConfigFile(selected_pkgs_spec, "a")
+                        if self.install_type == ACTION_INSTALL:
+                            self.Save_ConfigFile(selected_pkgs, self.CONFIG_FILE, "w")
+                            #selected_pkgs_spec
+                            if selected_pkgs_spec:
+                                self.Save_ConfigFile(selected_pkgs_spec, self.CONFIG_FILE, "a")
  
                             for pkg in selected_pkgs_spec:
                                 s_line = ["install", pkg.name]
@@ -672,7 +674,7 @@ class TuiCommand(commands.Command):
                     if self.install_type == ACTION_INSTALL     :
                         confirm_type = CONFIRM_INSTALL
                         hkey = HotkeyExitWindow(self.screen, confirm_type)
-                        if custom_type == RECORD_INSTALL:
+                        if custom_type >= RECORD_INSTALL:
                             selected_pkgs = []
                             selected_pkgs = self.Read_ConfigFile(packages, selected_pkgs)
                         if hkey == "y":
@@ -743,7 +745,7 @@ class TuiCommand(commands.Command):
                 hkey = HotkeyAttentionWindow(self.screen, ATTENTON_NONE)
                 return ("b", selected_pkgs, packages)
 
-        if custom_type == RECORD_INSTALL:
+        if custom_type >= RECORD_INSTALL:
             selected_pkgs = []
             selected_pkgs = self.Read_ConfigFile(display_pkgs, selected_pkgs)
 
