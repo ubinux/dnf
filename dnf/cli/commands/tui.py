@@ -109,6 +109,7 @@ class TuiCommand(commands.Command):
         self.grps = []
         self.group_flag = False
         self.group_botton = False
+        self.SAVE = True
 
     def configure(self):
         self.cli.demands = dnf.cli.commands.shell.ShellDemandSheet()
@@ -477,7 +478,7 @@ class TuiCommand(commands.Command):
                                                       self.CONFIG_FILE )
                     if result == "cancel":
                         # save config file
-                        self.CONFIG_FILE = ".config"
+                        self.SAVE = False
 
                     if self.install_type == ACTION_GET_SOURCE or self.install_type == ACTION_GET_SPDX:
                         self.GET_SOURCE_or_SPDX(selected_pkgs)
@@ -499,10 +500,11 @@ class TuiCommand(commands.Command):
                             self.run_dnf_command(s_line)
 
                         if self.install_type == ACTION_INSTALL:
-                            self.Save_ConfigFile(selected_pkgs, self.CONFIG_FILE, "w")
-                            #selected_pkgs_spec
-                            if selected_pkgs_spec:
-                                self.Save_ConfigFile(selected_pkgs_spec, self.CONFIG_FILE, "a")
+                            if self.SAVE == True:
+                                self.Save_ConfigFile(selected_pkgs, self.CONFIG_FILE, "w")
+                                #selected_pkgs_spec
+                                if selected_pkgs_spec:
+                                    self.Save_ConfigFile(selected_pkgs_spec, self.CONFIG_FILE, "a")
  
                             for pkg in selected_pkgs_spec:
                                 s_line = ["install", pkg.name]
