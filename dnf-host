@@ -184,6 +184,11 @@ Repos-rootfs(){
     echo "Target dir is ${TARGET_ROOTFS}/rootfs-${RELEASE}-${Date}"
 }
 
+Install_pkg_from_configfile(){
+      PKG_LIST=`cat $INSTALL_LIST`
+      dnf -c ${HIDDEN_ROOTFS}/etc/dnf/dnf-host.conf --setopt=reposdir=${HIDDEN_ROOTFS}/etc/yum.repos.d --repofrompath=oe-repo,${REPO_DIR} --installroot=${HIDDEN_ROOTFS} --setopt=logdir=$WORKDIR/ --nogpgcheck $* install $PKG_LIST --releasever=None
+}
+
 dnf-call() {
     if [ ! -f $WORKDIR/.env-dnf ]; then
         echo "Init the environment failed, please init again"
@@ -194,17 +199,25 @@ dnf-call() {
             md5sum -b ${HIDDEN_ROOTFS}/var/lib/rpm/Packages > .md5
         fi
 
+
         #Clean metadata for upgrade
         if [ "$1"x = "tui"x ]; then
             dnf -c ${HIDDEN_ROOTFS}/etc/dnf/dnf-host.conf --setopt=reposdir=${HIDDEN_ROOTFS}/etc/yum.repos.d --repofrompath=oe-repo,${REPO_DIR} --installroot=${HIDDEN_ROOTFS} --setopt=logdir=$WORKDIR/ --nogpgcheck clean metadata -q --releasever=None
         fi
-        dnf -c ${HIDDEN_ROOTFS}/etc/dnf/dnf-host.conf --setopt=reposdir=${HIDDEN_ROOTFS}/etc/yum.repos.d --repofrompath=oe-repo,${REPO_DIR} --installroot=${HIDDEN_ROOTFS} --setopt=logdir=$WORKDIR/ --nogpgcheck $* --releasever=None
+
+        #install from config file
+        if [ -n "$INSTALL_LIST" ]; then
+            Install_pkg_from_configfile
+        else
+            dnf -c ${HIDDEN_ROOTFS}/etc/dnf/dnf-host.conf --setopt=reposdir=${HIDDEN_ROOTFS}/etc/yum.repos.d --repofrompath=oe-repo,${REPO_DIR} --installroot=${HIDDEN_ROOTFS} --setopt=logdir=$WORKDIR/ --nogpgcheck $* --releasever=None
+        fi
+
         Date=`date +%Y%m%d%H%M`
         RELEASE=`echo $STRIP |awk -F '-' '{print $2}'`
         ROOTFS_TAR=rootfs-${RELEASE}-${Date}.tar.bz2
+
         if [ $TAR = "true" ]; then
-            cd ${HIDDEN_ROOTFS}
-            tar -cjf ../rootfs-${Date}.tar.bz2 ./*
+            Repos-rootfs
         fi
 
         #When you choose tui, the rootfs will be made only after pkg operation
@@ -225,9 +238,9 @@ if [ $# -eq 0 ]; then
 fi
 
 ARGS_ORG=$*
-ARGS_ORG=`echo $ARGS_ORG | sed 's/-D//' | sed 's/-Y//'| sed 's/--rootfs-tar//'`
+ARGS_ORG=`echo $ARGS_ORG | sed 's/-D//' | sed 's/-Y//'| sed 's/--rootfs-tar//'| sed 's/--install_list//'`
 
-ARGS=`getopt -q -a -o hDY -l help,rootfs-tar -- "$@"`
+ARGS=`getopt -q -a -o hDY -l install_list:,help,rootfs-tar -- "$@"`
 
 eval set -- "${ARGS}"
 while true
@@ -240,6 +253,10 @@ do
         --rootfs-tar)
                 TAR="true"
                 shift
+                ;;
+        --install_list)
+                INSTALL_LIST=$2
+                shift 2
                 ;;
         -D)
                 set -x
