@@ -101,7 +101,7 @@ index b88ddb4..71e697b 100644
 +
 +do_install_append_class-target() {
 +        install -d ${D}${sysconfdir}/yum.repos.d
-+        install -m 0644 ${WORKDIR}/oe-remote-repo.repo.sample ${D}${sysconfdir}/yum.repos.d
++        install -m 0644 ${WORKDIR}/oe-remote.repo.sample ${D}${sysconfdir}/yum.repos.d
 +}
 +
  SYSTEMD_SERVICE_${PN} = "dnf-makecache.service dnf-makecache.timer \

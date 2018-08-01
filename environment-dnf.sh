@@ -96,13 +96,14 @@ travFolder () {
                     grep -w "$line" $HIDDEN_ROOTFS/etc/dnf/vars/arch > /dev/null
                     if [ $? -ne 0 ]; then
                         echo -n "$line:" >> $HIDDEN_ROOTFS/etc/dnf/vars/arch
+                        echo -n " $line" >> $HIDDEN_ROOTFS/etc/rpmrc
                     fi
                 fi
             fi
             continue
         fi
     done
-    cd - 
+    cd - >/dev/null
 }
 
 Config_dnf () {
@@ -125,28 +126,22 @@ Config_dnf () {
     if [ ! -d $HIDDEN_ROOTFS/etc/dnf/vars ]; then
         mkdir -p $HIDDEN_ROOTFS/etc/dnf/vars
         echo -n "${MACHINE_ARCH}:${ARCH}:" >> $HIDDEN_ROOTFS/etc/dnf/vars/arch
-        echo "Scanning repo ..."
-        travFolder $REPO_DIR
     fi
+
+    #necessary rpm config
+    if [ ! -d $HIDDEN_ROOTFS/etc/rpm ] || [ ! -f $HIDDEN_ROOTFS/etc/rpm/platform ]; then
+        mkdir -p $HIDDEN_ROOTFS/etc/rpm
+        echo "${MACHINE_ARCH}-pc-linux" > $HIDDEN_ROOTFS/etc/rpm/platform
+    fi
+
+    if [ ! -f $HIDDEN_ROOTFS/etc/rpmrc ]; then
+        echo -n "arch_compat: ${MACHINE_ARCH}: all any noarch ${ARCH} ${MACHINE_ARCH}" > $HIDDEN_ROOTFS/etc/rpmrc
+    fi
+
+    echo "Scanning repo ..."
+    travFolder $REPO_DIR
     sed -i "s/:$/\n/g" $HIDDEN_ROOTFS/etc/dnf/vars/arch
-}
-
-Config_rpm () {
-#necessary rpm config
-if [ ! -d $HIDDEN_ROOTFS/etc/rpm ] || [ ! -f $HIDDEN_ROOTFS/etc/rpm/platform ]; then
-    mkdir -p $HIDDEN_ROOTFS/etc/rpm
-    echo "${MACHINE_ARCH}-pc-linux" > $HIDDEN_ROOTFS/etc/rpm/platform
-fi
-
-if [ ! -f $HIDDEN_ROOTFS/etc/rpmrc ]; then
-    echo -n "arch_compat: ${MACHINE_ARCH}: all any noarch ${ARCH} ${MACHINE_ARCH}" > $HIDDEN_ROOTFS/etc/rpmrc
-    for line in `ls $REPO_DIR/rpm`;do
-        if [ "$line" != "all" ] && [ "$line" != "any" ] && [ "$line" != "noarch" ] && [ "$line" != "${ARCH}" ] && [ "$line" != "${MACHINE_ARCH}" ]; then
-            echo -n " $line" >> $HIDDEN_ROOTFS/etc/rpmrc
-        fi
-    done
     sed -i "s/:$//g" $HIDDEN_ROOTFS/etc/rpmrc
-fi
 }
 
 #Start from here
