@@ -114,15 +114,33 @@ Config_dnf () {
     fi
     
     #clean the original content in dnf.conf file
-    echo "[main]" > $HIDDEN_ROOTFS/etc/dnf/dnf-host.conf
     #Add config_path in dnf.conf file
-    echo "spdx_repodir=$SPDXREPODIR" >> $HIDDEN_ROOTFS/etc/dnf/dnf-host.conf
-    echo "spdx_download=$SPDXDIR" >> $HIDDEN_ROOTFS/etc/dnf/dnf-host.conf
-    echo "srpm_repodir=$SRPMREPODIR" >> $HIDDEN_ROOTFS/etc/dnf/dnf-host.conf
-    echo "srpm_download=$SRPMDIR" >> $HIDDEN_ROOTFS/etc/dnf/dnf-host.conf
-    echo "rpm_repodir=$RPMREPODIR" >> $HIDDEN_ROOTFS/etc/dnf/dnf-host.conf
-    echo "rpm_download=$RPMDIR" >> $HIDDEN_ROOTFS/etc/dnf/dnf-host.conf
+
+cat > $HIDDEN_ROOTFS/etc/dnf/dnf-host.conf <<EOF
+[main]
+spdx_repodir=$SPDXREPODIR
+spdx_download=$SPDXDIR
+srpm_repodir=$SRPMREPODIR
+srpm_download=$SRPMDIR
+rpm_repodir=$RPMREPODIR
+rpm_download=$RPMDIR
+
+installroot=$HIDDEN_ROOTFS
+logdir=$WORKDIR
+releasever=None
+EOF
     
+    #Config local repo for cross environment
+    mkdir -p $HIDDEN_ROOTFS/etc/yum.repos.d
+
+cat > $HIDDEN_ROOTFS/etc/yum.repos.d/oe.repo  <<EOF
+[base]
+name=oe_repo
+baseurl=file://$REPODIR
+enabled=1
+gpgcheck=0 
+EOF
+
     if [ ! -d $HIDDEN_ROOTFS/etc/dnf/vars ]; then
         mkdir -p $HIDDEN_ROOTFS/etc/dnf/vars
         echo -n "${MACHINE_ARCH}:${ARCH}:" >> $HIDDEN_ROOTFS/etc/dnf/vars/arch

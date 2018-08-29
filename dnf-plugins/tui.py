@@ -15,15 +15,16 @@ import dnf.exceptions
 import hawkey
 import logging
 
-from dnf.cli.window import *
+from .window import *
 import sys, os, copy, textwrap, snack, string, time, re, shutil
 from snack import *
 
+import dnf
 import dnf.cli.demand
 import dnf.cli.option_parser
 import dnf.cli.commands.shell
 import dnf.conf
-import dnf.conf.parser
+from dnf.cli.option_parser import OptionParser
 import dnf.conf.substitutions
 import dnf.const
 import dnf.exceptions
@@ -35,6 +36,7 @@ import dnf.rpm
 import dnf.util
 import dnf.cli.utils
 import dnf.yum.misc
+import subprocess
 
 _TXT_ROOT_TITLE = "Package Installer"
 
@@ -86,6 +88,7 @@ SAMPLE = NATIVE_SYSROOT + "/usr/share/dnf"
 
 logger = logging.getLogger('dnf')
 
+@dnf.plugin.register_command
 class TuiCommand(commands.Command):
     """A class containing methods needed by the cli to execute the
     tui command.
@@ -111,12 +114,38 @@ class TuiCommand(commands.Command):
         self.group_botton = False
         self.SAVE = True
 
+    @staticmethod
+    def set_argparser(parser):
+        parser.add_argument("--init", dest="with_init",
+                          action="store_true", default=None,
+                          help=_("Init the dnf environment for toolchain"))
+
     def configure(self):
         self.cli.demands = dnf.cli.commands.shell.ShellDemandSheet()
+        demands = self.cli.demands
+        demands.root_user = False
 
     def run(self, command=None, argv=None):
-        logger.debug("Enter tui interface.")
-        self.PKGINSTDispMain()
+        if self.opts.with_init:
+            os.system("dnf-host init")
+        else:
+            ori_path = os.getcwd() + "/.env-dnf"
+            if os.path.exists(ori_path):
+                self.read_environ(ori_path)
+            logger.debug("Enter tui interface.")
+            self.PKGINSTDispMain()
+
+    def read_environ(self, file):
+        try:
+            with open(file, 'r') as fd:
+                lines = fd.readlines()
+                for line in lines:
+                    #if "PSEUDO" in line:
+                    env = line.rstrip().split('=', 1)
+                    os.environ[env[0]]=env[1]
+        except IOError:
+            logger.info(_('Error: Cannot open %s for reading'), self.base.output.term.bold(file))
+            sys.exit(1)
 
     def run_dnf_command(self, s_line):
         """Execute the subcommand you put in.

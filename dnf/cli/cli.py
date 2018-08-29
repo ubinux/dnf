@@ -48,12 +48,9 @@ import dnf.cli.commands.repoquery
 import dnf.cli.commands.search
 import dnf.cli.commands.shell
 import dnf.cli.commands.swap
-import dnf.cli.commands.tui
 import dnf.cli.commands.updateinfo
 import dnf.cli.commands.upgrade
 import dnf.cli.commands.upgrademinimal
-import dnf.cli.commands.fetchspdx
-import dnf.cli.commands.fetchsrpm
 import dnf.cli.demand
 import dnf.cli.option_parser
 import dnf.cli.utils
@@ -695,7 +692,6 @@ class Cli(object):
         self.register_command(dnf.cli.commands.search.SearchCommand)
         self.register_command(dnf.cli.commands.shell.ShellCommand)
         self.register_command(dnf.cli.commands.swap.SwapCommand)
-        self.register_command(dnf.cli.commands.tui.TuiCommand)
         self.register_command(dnf.cli.commands.updateinfo.UpdateInfoCommand)
         self.register_command(dnf.cli.commands.upgrade.UpgradeCommand)
         self.register_command(dnf.cli.commands.upgrademinimal.UpgradeMinimalCommand)
@@ -706,8 +702,6 @@ class Cli(object):
         self.register_command(dnf.cli.commands.RepoPkgsCommand)
         self.register_command(dnf.cli.commands.HelpCommand)
         self.register_command(dnf.cli.commands.HistoryCommand)
-        self.register_command(dnf.cli.commands.fetchspdx.Fetch_spdxCommand)
-        self.register_command(dnf.cli.commands.fetchsrpm.Fetch_srpmCommand)
 
     def _configure_repos(self, opts):
         self.base.read_all_repos(opts)
