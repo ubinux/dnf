@@ -120,18 +120,38 @@ class TuiCommand(commands.Command):
                           action="store_true", default=None,
                           help=_("Init the dnf environment for toolchain"))
 
+    def pre_configure(self):
+        #Reload the conf and args
+        if self.opts.with_init:
+            pass
+        else:
+            env_path = os.getcwd() + "/.env-dnf"
+            if os.path.exists(env_path):
+            #    self.read_environ(env_path)
+
+                install_root_from_env = os.environ.get('HIDDEN_ROOTFS')
+                self.opts.config_file_path = install_root_from_env + "/etc/dnf/dnf-host.conf"
+                self.opts.installroot = install_root_from_env
+                self.opts.reposdir = install_root_from_env + "/etc/yum.repos.d"
+
+                repo_dir_from_env = os.environ.get('REPO_DIR')
+                self.opts.repofrompath = {'oe-repo': repo_dir_from_env}
+
+                self.opts.logdir = os.path.split(install_root_from_env)[0]
+
     def configure(self):
         self.cli.demands = dnf.cli.commands.shell.ShellDemandSheet()
         demands = self.cli.demands
         demands.root_user = False
+      
 
     def run(self, command=None, argv=None):
         if self.opts.with_init:
             os.system("dnf-host init")
         else:
-            ori_path = os.getcwd() + "/.env-dnf"
-            if os.path.exists(ori_path):
-                self.read_environ(ori_path)
+            #ori_path = os.getcwd() + "/.env-dnf"
+            #if os.path.exists(ori_path):
+            #    self.read_environ(ori_path)
             logger.debug("Enter tui interface.")
             self.PKGINSTDispMain()
 
