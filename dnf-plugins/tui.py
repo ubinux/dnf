@@ -127,7 +127,7 @@ class TuiCommand(commands.Command):
         else:
             env_path = os.getcwd() + "/.env-dnf"
             if os.path.exists(env_path):
-            #    self.read_environ(env_path)
+                self.read_environ(env_path)
 
                 install_root_from_env = os.environ.get('HIDDEN_ROOTFS')
                 self.opts.config_file_path = install_root_from_env + "/etc/dnf/dnf-host.conf"
