@@ -12,31 +12,31 @@ TARGETROOTFS=$9
 WORKDIR=`pwd`
 
 Export_env () {
-    echo "export TARGET_ROOTFS=$TARGETROOTFS" > $WORKDIR/.env-dnf
-    echo "export HIDDEN_ROOTFS=$HIDDENROOTFS" >> $WORKDIR/.env-dnf
-    echo "export REPO_DIR=$REPODIR" >> $WORKDIR/.env-dnf
-    echo "export SPDX_REPO_DIR=$SPDXREPODIR" >> $WORKDIR/.env-dnf
-    echo "export SPDX_DESTINATION_DIR=$SPDXDIR" >> $WORKDIR/.env-dnf
-    echo "export SRPM_REPO_DIR=$SRPMREPODIR" >> $WORKDIR/.env-dnf
-    echo "export SRPM_DESTINATION_DIR=$SRPMDIR" >> $WORKDIR/.env-dnf
-    echo "export RPM_REPO_DIR=$RPMREPODIR" >> $WORKDIR/.env-dnf
-    echo "export RPM_DESTINATION_DIR=$RPMDIR" >> $WORKDIR/.env-dnf
-    echo "export LD_LIBRARY_PATH=$OECORE_NATIVE_SYSROOT/usr/bin/../lib/pseudo/lib:$OECORE_NATIVE_SYSROOT/usr/bin/../lib/pseudo/lib64" >> $WORKDIR/.env-dnf
-    echo "export LD_PRELOAD=libpseudo.so" >> $WORKDIR/.env-dnf
-    echo "export PSEUDO_PASSWD=$HIDDENROOTFS" >> $WORKDIR/.env-dnf 
-    echo "export PSEUDO_OPTS=" >> $WORKDIR/.env-dnf
-    echo "export PSEUDO_LIBDIR=$OECORE_NATIVE_SYSROOT/usr/bin/../lib/pseudo/lib64" >> $WORKDIR/.env-dnf
-    echo "export PSEUDO_NOSYMLINKEXP=1" >> $WORKDIR/.env-dnf
-    echo "export PSEUDO_DISABLED=0" >> $WORKDIR/.env-dnf
-    echo "export PSEUDO_PREFIX=$OECORE_NATIVE_SYSROOT/usr" >> $WORKDIR/.env-dnf
-    echo "export PSEUDO_LOCALSTATEDIR=$WORKDIR/pseudo/" >> $WORKDIR/.env-dnf
-    echo "export D=$HIDDENROOTFS" >> $WORKDIR/.env-dnf
-    echo "export OFFLINE_ROOT=$HIDDENROOTFS" >> $WORKDIR/.env-dnf
-    echo "export IPKG_OFFLINE_ROOT=$HIDDENROOTFS" >> $WORKDIR/.env-dnf
-    echo "export OPKG_OFFLINE_ROOT=$HIDDENROOTFS" >> $WORKDIR/.env-dnf
-    echo "export INTERCEPT_DIR=$WORKDIR/intercept_scripts" >> $WORKDIR/.env-dnf
-    echo "export NATIVE_ROOT=$OECORE_NATIVE_SYSROOT" >> $WORKDIR/.env-dnf
-    echo "export RPM_ETCCONFIGDIR=$HIDDENROOTFS" >> $WORKDIR/.env-dnf
+    echo "TARGET_ROOTFS=$TARGETROOTFS" > $WORKDIR/.env-dnf
+    echo "HIDDEN_ROOTFS=$HIDDENROOTFS" >> $WORKDIR/.env-dnf
+    echo "REPO_DIR=$REPODIR" >> $WORKDIR/.env-dnf
+    echo "SPDX_REPO_DIR=$SPDXREPODIR" >> $WORKDIR/.env-dnf
+    echo "SPDX_DESTINATION_DIR=$SPDXDIR" >> $WORKDIR/.env-dnf
+    echo "SRPM_REPO_DIR=$SRPMREPODIR" >> $WORKDIR/.env-dnf
+    echo "SRPM_DESTINATION_DIR=$SRPMDIR" >> $WORKDIR/.env-dnf
+    echo "RPM_REPO_DIR=$RPMREPODIR" >> $WORKDIR/.env-dnf
+    echo "RPM_DESTINATION_DIR=$RPMDIR" >> $WORKDIR/.env-dnf
+    echo "LD_LIBRARY_PATH=$OECORE_NATIVE_SYSROOT/usr/bin/../lib/pseudo/lib:$OECORE_NATIVE_SYSROOT/usr/bin/../lib/pseudo/lib64" >> $WORKDIR/.env-dnf
+    echo "LD_PRELOAD=libpseudo.so" >> $WORKDIR/.env-dnf
+    echo "PSEUDO_PASSWD=$HIDDENROOTFS" >> $WORKDIR/.env-dnf 
+    echo "PSEUDO_OPTS=" >> $WORKDIR/.env-dnf
+    echo "PSEUDO_LIBDIR=$OECORE_NATIVE_SYSROOT/usr/bin/../lib/pseudo/lib64" >> $WORKDIR/.env-dnf
+    echo "PSEUDO_NOSYMLINKEXP=1" >> $WORKDIR/.env-dnf
+    echo "PSEUDO_DISABLED=0" >> $WORKDIR/.env-dnf
+    echo "PSEUDO_PREFIX=$OECORE_NATIVE_SYSROOT/usr" >> $WORKDIR/.env-dnf
+    echo "PSEUDO_LOCALSTATEDIR=$WORKDIR/pseudo/" >> $WORKDIR/.env-dnf
+    echo "D=$HIDDENROOTFS" >> $WORKDIR/.env-dnf
+    echo "OFFLINE_ROOT=$HIDDENROOTFS" >> $WORKDIR/.env-dnf
+    echo "IPKG_OFFLINE_ROOT=$HIDDENROOTFS" >> $WORKDIR/.env-dnf
+    echo "OPKG_OFFLINE_ROOT=$HIDDENROOTFS" >> $WORKDIR/.env-dnf
+    echo "INTERCEPT_DIR=$WORKDIR/intercept_scripts" >> $WORKDIR/.env-dnf
+    echo "NATIVE_ROOT=$OECORE_NATIVE_SYSROOT" >> $WORKDIR/.env-dnf
+    echo "RPM_ETCCONFIGDIR=$HIDDENROOTFS" >> $WORKDIR/.env-dnf
 }
 
 Check_para () {

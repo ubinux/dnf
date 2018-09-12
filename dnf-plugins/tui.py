@@ -36,7 +36,7 @@ import dnf.rpm
 import dnf.util
 import dnf.cli.utils
 import dnf.yum.misc
-import subprocess
+from subprocess import call
 
 _TXT_ROOT_TITLE = "Package Installer"
 
@@ -119,23 +119,21 @@ class TuiCommand(commands.Command):
         parser.add_argument("--init", dest="with_init",
                           action="store_true", default=None,
                           help=_("Init the dnf environment for toolchain"))
+        parser.add_argument("--call", dest="with_call",
+                          action="store_true", default=None,
+                          help=_("Call the dnf tui for toolchain"))
 
     def pre_configure(self):
-        #Reload the conf and args
         if self.opts.with_init:
             pass
         else:
+        #Reload the conf and args
             env_path = os.getcwd() + "/.env-dnf"
             if os.path.exists(env_path):
                 self.read_environ(env_path)
 
                 install_root_from_env = os.environ.get('HIDDEN_ROOTFS')
-                self.opts.config_file_path = install_root_from_env + "/etc/dnf/dnf-host.conf"
                 self.opts.installroot = install_root_from_env
-                self.opts.reposdir = install_root_from_env + "/etc/yum.repos.d"
-
-                repo_dir_from_env = os.environ.get('REPO_DIR')
-                self.opts.repofrompath = {'oe-repo': repo_dir_from_env}
 
                 self.opts.logdir = os.path.split(install_root_from_env)[0]
 
@@ -148,10 +146,19 @@ class TuiCommand(commands.Command):
     def run(self, command=None, argv=None):
         if self.opts.with_init:
             os.system("dnf-host init")
+
+
+        if self.opts.installroot:  #if used in toolchain
+            if self.opts.with_call:
+                logger.debug("Enter tui interface.")
+                self.PKGINSTDispMain()
+            else:
+                exit_code = call(["dnf", "tui", "--call", "--installroot={}".format(
+                                  self.opts.installroot), "--setopt=logdir={}".format(
+                                  self.opts.logdir)])
+                if exit_code != 0:
+                    raise dnf.exceptions.Error(_("Failed to call dnf tui"))
         else:
-            #ori_path = os.getcwd() + "/.env-dnf"
-            #if os.path.exists(ori_path):
-            #    self.read_environ(ori_path)
             logger.debug("Enter tui interface.")
             self.PKGINSTDispMain()
 
