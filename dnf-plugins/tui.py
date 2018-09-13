@@ -135,6 +135,7 @@ class TuiCommand(commands.Command):
 
                 install_root_from_env = os.environ.get('HIDDEN_ROOTFS')
                 self.opts.installroot = install_root_from_env
+                self.opts.config_file_path = install_root_from_env + "/etc/dnf/dnf-host.conf"
 
                 self.opts.logdir = os.path.split(install_root_from_env)[0]
 
@@ -155,7 +156,8 @@ class TuiCommand(commands.Command):
                 logger.debug("Enter tui interface.")
                 self.PKGINSTDispMain()
             else:
-                exit_code = call(["dnf", "tui", "--call", "--installroot={}".format(
+                exit_code = call(["dnf", "tui", "--call", "-c{}".format(
+                                  self.opts.config_file_path), "--installroot={}".format(
                                   self.opts.installroot), "--setopt=logdir={}".format(
                                   self.opts.logdir), "--releasever=None"])
                 if exit_code != 0:
