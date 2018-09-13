@@ -127,6 +127,8 @@ class TuiCommand(commands.Command):
     def pre_configure(self):
         if self.opts.with_init:
             pass
+        if self.opts.with_call:
+            pass
         else:
         #Reload the conf and args
             env_path = os.getcwd() + "/.env-dnf"
@@ -162,6 +164,8 @@ class TuiCommand(commands.Command):
                                   self.opts.logdir), "--releasever=None"])
                 if exit_code != 0:
                     raise dnf.exceptions.Error(_("Failed to call dnf tui"))
+                
+                sys.exit(0)
         else:
             logger.debug("Enter tui interface.")
             self.PKGINSTDispMain()
