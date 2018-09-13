@@ -16,6 +16,7 @@ import hawkey
 import logging
 
 from .window import *
+from .utils import *
 import sys, os, copy, textwrap, snack, string, time, re, shutil
 from snack import *
 
@@ -145,8 +146,9 @@ class TuiCommand(commands.Command):
 
     def run(self, command=None, argv=None):
         if self.opts.with_init:
-            os.system("dnf-host init")
-
+            plugin_dir = os.path.split(__file__)[0]
+            os.system("%s/dnf-host init" %plugin_dir)
+            sys.exit(0)
 
         if self.opts.installroot:  #if used in toolchain
             if self.opts.with_call:
@@ -155,7 +157,7 @@ class TuiCommand(commands.Command):
             else:
                 exit_code = call(["dnf", "tui", "--call", "--installroot={}".format(
                                   self.opts.installroot), "--setopt=logdir={}".format(
-                                  self.opts.logdir)])
+                                  self.opts.logdir), "--releasever=None"])
                 if exit_code != 0:
                     raise dnf.exceptions.Error(_("Failed to call dnf tui"))
         else:
@@ -209,11 +211,11 @@ class TuiCommand(commands.Command):
         if self.install_type == ACTION_GET_SOURCE:
             srcdir_path = self.base.conf.srpm_repodir
             destdir_path = self.base.conf.srpm_download
-            dnf.cli.utils.fetchSPDXorSRPM('srpm', notype_pkgs, srcdir_path, destdir_path)
+            fetchSPDXorSRPM('srpm', notype_pkgs, srcdir_path, destdir_path)
         elif self.install_type == ACTION_GET_SPDX:
             srcdir_path = self.base.conf.spdx_repodir
             destdir_path = self.base.conf.spdx_download
-            dnf.cli.utils.fetchSPDXorSRPM('spdx', notype_pkgs, srcdir_path, destdir_path)
+            fetchSPDXorSRPM('spdx', notype_pkgs, srcdir_path, destdir_path)
 
     def GET_RKG(self, selected_pkgs):
         if self.screen != None:
@@ -221,18 +223,18 @@ class TuiCommand(commands.Command):
             self.screen = None
         srcdir_path = self.base.conf.rpm_repodir
         destdir_path = self.base.conf.rpm_download
-        dnf.cli.utils.fetchSPDXorSRPM('rpm', selected_pkgs, srcdir_path, destdir_path)
+        fetchSPDXorSRPM('rpm', selected_pkgs, srcdir_path, destdir_path)
 
     def GET_ALL(self, selected_pkgs):
         if self.screen != None:
             StopHotkeyScreen(self.screen)
             self.screen = None
-        dnf.cli.utils.fetchSPDXorSRPM('rpm', selected_pkgs, 
+        fetchSPDXorSRPM('rpm', selected_pkgs, 
                     self.base.conf.rpm_repodir, self.base.conf.rpm_download)
         notype_pkgs = self.PKG_filter(selected_pkgs)
-        dnf.cli.utils.fetchSPDXorSRPM('srpm', notype_pkgs, 
+        fetchSPDXorSRPM('srpm', notype_pkgs, 
                     self.base.conf.srpm_repodir, self.base.conf.srpm_download)
-        dnf.cli.utils.fetchSPDXorSRPM('spdx', notype_pkgs, 
+        fetchSPDXorSRPM('spdx', notype_pkgs, 
                     self.base.conf.spdx_repodir, self.base.conf.spdx_download)
 
     def Read_ConfigFile(self, display_pkgs, selected_pkgs):
