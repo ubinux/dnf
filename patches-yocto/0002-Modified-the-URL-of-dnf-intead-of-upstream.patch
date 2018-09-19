@@ -1,13 +1,13 @@
-From a55184313b6c3d59383be24d2d6d5e7e40df6140 Mon Sep 17 00:00:00 2001
+From 74bebe66b624ac7515c9de6e406c62d605d3ea56 Mon Sep 17 00:00:00 2001
 From: Zheng Ruoqin <zhengrq.fnst@cn.fujitsu.com>
-Date: Fri, 11 May 2018 02:38:22 +0000
+Date: Wed, 19 Sep 2018 07:27:42 +0000
 Subject: [PATCH] Modified the URL of dnf intead of upstream.
 
 Signed-off-by: Zheng Ruoqin <zhengrq.fnst@cn.fujitsu.com>
 ---
  .../recipes-devtools/dnf/dnf/oe-remote.repo.sample |  6 +++
- meta/recipes-devtools/dnf/dnf_2.7.5.bb             | 52 ++++++++++++++++++----
- 2 files changed, 50 insertions(+), 8 deletions(-)
+ meta/recipes-devtools/dnf/dnf_2.7.5.bb             | 51 ++++++++++++++++++----
+ 2 files changed, 49 insertions(+), 8 deletions(-)
  create mode 100644 meta/recipes-devtools/dnf/dnf/oe-remote.repo.sample
 
 diff --git a/meta/recipes-devtools/dnf/dnf/oe-remote.repo.sample b/meta/recipes-devtools/dnf/dnf/oe-remote.repo.sample
@@ -23,7 +23,7 @@ index 0000000..05e8cd6
 +gpgcheck=0
 +
 diff --git a/meta/recipes-devtools/dnf/dnf_2.7.5.bb b/meta/recipes-devtools/dnf/dnf_2.7.5.bb
-index b88ddb4..71e697b 100644
+index b88ddb4..bc97901 100644
 --- a/meta/recipes-devtools/dnf/dnf_2.7.5.bb
 +++ b/meta/recipes-devtools/dnf/dnf_2.7.5.bb
 @@ -4,22 +4,19 @@ LIC_FILES_CHKSUM = "file://COPYING;md5=b234ee4d69f5fce4486a80fdaf4a4263 \
@@ -36,13 +36,13 @@ index b88ddb4..71e697b 100644
 -           file://0005-Do-not-prepend-installroot-to-logdir.patch \
 -           file://0029-Do-not-set-PYTHON_INSTALL_DIR-by-running-python.patch \
 -           file://0030-Run-python-scripts-using-env.patch \
-+SRC_URI = "git://github.com/ubinux/dnf.git;branch=dnf-yocto2.5 \
++SRC_URI = "git://github.com/ubinux/dnf.git;branch=dnf-yocto2.5-plugin \
             "
  
 -SRCREV = "564c44667c7014843fa6f1732621093114ec59b2"
 +SRC_URI_append_class-target = "file://oe-remote.repo.sample"
 +
-+SRCREV = "2cb2fde07423d90aee40ba249a4231e85761496a"
++SRCREV = "332d143e0290a57c770eabb507eccc7ea1f54ca6"
  UPSTREAM_CHECK_GITTAGREGEX = "(?P<pver>\d+(\.\d+)+)"
  
  S = "${WORKDIR}/git"
@@ -84,7 +84,7 @@ index b88ddb4..71e697b 100644
  RRECOMMENDS_${PN}_class-target += "gnupg"
  
  # Create a symlink called 'dnf' as 'make install' does not do it, but
-@@ -66,6 +86,22 @@ do_install_append_class-native() {
+@@ -66,6 +86,21 @@ do_install_append_class-native() {
                  RPM_NO_CHROOT_FOR_SCRIPTS=1
  }
  
@@ -92,11 +92,10 @@ index b88ddb4..71e697b 100644
 +        create_wrapper ${D}/${bindir}/dnf \
 +                RPM_CONFIGDIR=${SDKPATHNATIVE}${libdir_nativesdk}/rpm \
 +                RPM_NO_CHROOT_FOR_SCRIPTS=1
-+        install -m 0755 ${S}/environment-dnf.sh ${D}/${bindir}/environment-dnf.sh
-+        install -m 0755 ${S}/dnf-host ${D}/${bindir}/dnf-host
 +        install -d ${D}${datadir}/dnf
-+        install -m 0755 ${S}/samples/busybox ${D}${datadir}/dnf/busybox
-+        install -m 0755 ${S}/samples/systemd ${D}${datadir}/dnf/systemd
++        install -m 0755 ${S}/samples/* ${D}${datadir}/dnf
++        install -d ${D}${PYTHON_SITEPACKAGES_DIR}/dnf-plugins
++        install -m 0755 ${S}/dnf-plugins/* ${D}${PYTHON_SITEPACKAGES_DIR}/dnf-plugins
 +}
 +
 +do_install_append_class-target() {
