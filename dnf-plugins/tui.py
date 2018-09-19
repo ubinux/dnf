@@ -182,6 +182,7 @@ class TuiCommand(commands.Command):
                     tar = True
 
                 if tar: 
+                    os.environ["LD_PRELOAD"] = ''
                     os.system("%s/dnf-host --rootfs-tar" %plugin_dir)
                 sys.exit(0)
         else:
@@ -193,7 +194,7 @@ class TuiCommand(commands.Command):
             with open(file, 'r') as fd:
                 lines = fd.readlines()
                 for line in lines:
-                    #if "PSEUDO" in line:
+                    #if "LD_PRELOAD" in line:
                     env = line.rstrip().split('=', 1)
                     os.environ[env[0]] = env[1]
         except IOError:

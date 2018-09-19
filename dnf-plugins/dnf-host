@@ -215,9 +215,6 @@ dnf-init() {
     if [ -f .env-dnf ];then
         rm .env-dnf
     fi
-    if [ -f .md5 ];then
-        rm .md5
-    fi
     if [ -d $HIDDEN_ROOTFS_DIR ];then
         echo "Deleting temp rootfs......"
         rm -rf $HIDDEN_ROOTFS_DIR
@@ -335,7 +332,6 @@ dnf-call() {
         echo "Init the environment failed, please init again"
         exit 0
     else
-        source $WORKDIR/.env-dnf
 
         #install from config file
         if [ -n "$INSTALL_LIST" ]; then
@@ -350,7 +346,6 @@ dnf-call() {
         if [ $TAR = "true" ]; then
             Repos-rootfs
         fi
-
     fi
 }
 
