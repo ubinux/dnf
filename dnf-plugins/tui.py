@@ -16,8 +16,8 @@ import hawkey
 import logging
 
 from .window import *
-from .utils import *
-import sys, os, copy, textwrap, snack, string, time, re, shutil
+from .utils import fetchSPDXorSRPM
+import sys, os, copy, textwrap, snack, string, time, re, shutil, hashlib
 from snack import *
 
 import dnf
@@ -135,11 +135,11 @@ class TuiCommand(commands.Command):
             if os.path.exists(env_path):
                 self.read_environ(env_path)
 
-                install_root_from_env = os.environ.get('HIDDEN_ROOTFS')
+                install_root_from_env = os.environ['HIDDEN_ROOTFS']
                 self.opts.installroot = install_root_from_env
                 self.opts.config_file_path = install_root_from_env + "/etc/dnf/dnf-host.conf"
 
-                self.opts.logdir = os.path.split(install_root_from_env)[0]
+                self.opts.logdir = os.path.dirname(install_root_from_env)
 
     def configure(self):
         self.cli.demands = dnf.cli.commands.shell.ShellDemandSheet()
@@ -148,16 +148,23 @@ class TuiCommand(commands.Command):
       
 
     def run(self, command=None, argv=None):
+        plugin_dir = os.path.split(__file__)[0]
         if self.opts.with_init:
-            plugin_dir = os.path.split(__file__)[0]
             os.system("%s/dnf-host init" %plugin_dir)
             sys.exit(0)
 
         if self.opts.installroot:  #if used in toolchain
+            tar = False
+            old_md5 = None
             if self.opts.with_call:
                 logger.debug("Enter tui interface.")
                 self.PKGINSTDispMain()
             else:
+                rpm_dbfile = self.opts.installroot + "/var/lib/rpm/Packages"
+                if os.path.exists(rpm_dbfile):
+                    f1 = open(rpm_dbfile, 'rb')
+                    old_md5 = hashlib.md5(f1.read()).hexdigest()
+
                 exit_code = call(["dnf", "tui", "--call", "-c{}".format(
                                   self.opts.config_file_path), "--installroot={}".format(
                                   self.opts.installroot), "--setopt=logdir={}".format(
@@ -165,6 +172,17 @@ class TuiCommand(commands.Command):
                 if exit_code != 0:
                     raise dnf.exceptions.Error(_("Failed to call dnf tui"))
                 
+                #When you choose tui, the rootfs will be made only after pkg operation
+                if old_md5:
+                    f2 = open(rpm_dbfile, 'rb')
+                    new_md5 = hashlib.md5(f2.read()).hexdigest()
+                    if old_md5 != new_md5:
+                        tar = True
+                elif os.path.exists(rpm_dbfile):
+                    tar = True
+
+                if tar: 
+                    os.system("%s/dnf-host --rootfs-tar" %plugin_dir)
                 sys.exit(0)
         else:
             logger.debug("Enter tui interface.")
@@ -177,7 +195,7 @@ class TuiCommand(commands.Command):
                 for line in lines:
                     #if "PSEUDO" in line:
                     env = line.rstrip().split('=', 1)
-                    os.environ[env[0]]=env[1]
+                    os.environ[env[0]] = env[1]
         except IOError:
             logger.info(_('Error: Cannot open %s for reading'), self.base.output.term.bold(file))
             sys.exit(1)

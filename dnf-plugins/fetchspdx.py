@@ -25,14 +25,16 @@ from dnf.cli.option_parser import OptionParser
 from dnf.i18n import _
 from itertools import chain
 import dnf.subject
+import dnf.plugin
 
 import dnf.exceptions
 import hawkey
 import logging
-import dnf.cli.utils
+from .utils import *
 
 logger = logging.getLogger('dnf')
 
+@dnf.plugin.register_command
 class Fetch_spdxCommand(commands.Command):
     """A class containing methods needed by the cli to execute the
     install command.
@@ -81,7 +83,7 @@ class Fetch_spdxCommand(commands.Command):
             logger.info(_("Error: No matches found."))
             return
 
-        dnf.cli.utils.fetchSPDXorSRPM('spdx', install_pkgs, srcdir_path, destdir_path)
+        fetchSPDXorSRPM('spdx', install_pkgs, srcdir_path, destdir_path)
 
     def run(self):
         self.fetchSPDX(self.opts.pkg_specs)
