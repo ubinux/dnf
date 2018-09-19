@@ -332,6 +332,7 @@ dnf-call() {
         echo "Init the environment failed, please init again"
         exit 0
     else
+        source $WORKDIR/.env-dnf
 
         #install from config file
         if [ -n "$INSTALL_LIST" ]; then
