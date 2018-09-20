@@ -596,6 +596,7 @@ class TuiCommand(commands.Command):
                         if self.no_gpl3:
                             #obtain the transaction
                             self.base.resolve(self.cli.demands.allow_erasing)
+                            #obtain the deps of selected pkgs
                             install_set = self.base.transaction.install_set
 
                             result = self.showChangeSet(install_set)
@@ -807,18 +808,13 @@ class TuiCommand(commands.Command):
                 display_pkgs = sorted(display_pkgs)
 
             if self.install_type == ACTION_UPGRADE:
-                self.base.upgrade_all()
-                self.base.resolve(self.cli.demands.allow_erasing)
-                install_set = self.base.transaction.install_set
+                q = self.base.sack.query()
+                upgrade_set = q.upgrades()
               
                 display_pkgs = []
-                for pkg in install_set:
+                for pkg in upgrade_set:
                     display_pkgs.append(pkg)
                 display_pkgs = sorted(display_pkgs)
-
-                # clean the _transaction
-                #self.base.close()
-                self.base._transaction = None
 
         if len(display_pkgs)==0:
             if self.install_type==ACTION_INSTALL:
