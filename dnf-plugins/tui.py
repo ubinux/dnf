@@ -125,9 +125,9 @@ class TuiCommand(commands.Command):
 
     def pre_configure(self):
         if self.opts.with_init:
-            pass
+            return
         if self.opts.with_call:
-            pass
+            return
         else:
         #Reload the conf and args
             env_path = os.getcwd() + "/.env-dnf"
