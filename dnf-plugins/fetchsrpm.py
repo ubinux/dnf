@@ -79,8 +79,6 @@ class Fetch_srpmCommand(commands.Command):
         demands.sack_activation = True
         demands.available_repos = True
         demands.resolving = True
-        commands._checkGPGKey(self.base, self.cli)
-        commands._checkEnabledRepo(self.base, self.opts.filenames)
         self.forms = [self.nevra_forms[command] for command in self.opts.command
                       if command in list(self.nevra_forms.keys())]
 
