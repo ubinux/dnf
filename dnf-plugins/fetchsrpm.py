@@ -31,6 +31,8 @@ import dnf.exceptions
 import hawkey
 import logging
 from .utils import *
+from subprocess import call
+import sys
 
 logger = logging.getLogger('dnf')
 
@@ -51,6 +53,22 @@ class Fetch_srpmCommand(commands.Command):
         parser.add_argument('package', nargs='+', metavar=_('PACKAGE'),
                           action=OptionParser.ParseSpecGroupFileCallback,
                           help=_('Package to download'))
+        parser.add_argument("--call", dest="with_call",
+                          action="store_true", default=None,
+                          help=_("Call the dnf tui for toolchain"))
+
+    def pre_configure(self):
+        if self.opts.with_call:
+            pass
+        else:
+        #Reload the conf and args
+            env_path = os.getcwd() + "/.env-dnf"
+            if os.path.exists(env_path):
+                read_environ(env_path)
+                install_root_from_env = os.environ['HIDDEN_ROOTFS']
+                self.opts.installroot = install_root_from_env
+                self.opts.config_file_path = install_root_from_env + "/etc/dnf/dnf-host.conf"
+                self.opts.logdir = os.path.dirname(install_root_from_env)
 
     def configure(self):
         """Verify that conditions are met so that this command can run.
@@ -61,7 +79,6 @@ class Fetch_srpmCommand(commands.Command):
         demands.sack_activation = True
         demands.available_repos = True
         demands.resolving = True
-        demands.root_user = True
         commands._checkGPGKey(self.base, self.cli)
         commands._checkEnabledRepo(self.base, self.opts.filenames)
         self.forms = [self.nevra_forms[command] for command in self.opts.command
@@ -69,8 +86,8 @@ class Fetch_srpmCommand(commands.Command):
 
     def fetchSRPM(self, pkg_specs):
         """Add for spdx file cp."""
-        srcdir_path = self.base.conf.srpm_repodir
-        destdir_path = self.base.conf.srpm_download
+        srcdir_path = os.environ['SRPM_REPO_DIR']
+        destdir_path = os.environ['SRPM_DESTINATION_DIR']
 
         '''Obtain yum package list '''
         ypl = self.base.returnPkgLists(
@@ -86,5 +103,21 @@ class Fetch_srpmCommand(commands.Command):
         fetchSPDXorSRPM('srpm', install_pkgs, srcdir_path, destdir_path)
 
     def run(self):
-        self.fetchSRPM(self.opts.pkg_specs)
+        if self.opts.installroot:  #if used in toolchain
+            if self.opts.with_call:
+                self.fetchSRPM(self.opts.pkg_specs)
+            else:
+                dnf_args = ["dnf", "fetchsrpm", "--call", "-c{}".format(
+                            self.opts.config_file_path), "--installroot={}".format(
+                            self.opts.installroot), "--setopt=logdir={}".format(
+                            self.opts.logdir), "--releasever=None"] + self.opts.pkg_specs
+
+                exit_code = call(dnf_args)
+                if exit_code != 0:
+                    raise dnf.exceptions.Error(_("Failed to call dnf fetchspdx"))
+               
+                sys.exit(0)
+
+        else:
+            self.fetchSRPM(self.opts.pkg_specs)
 

@@ -16,7 +16,7 @@ import hawkey
 import logging
 
 from .window import *
-from .utils import fetchSPDXorSRPM
+from .utils import fetchSPDXorSRPM, read_environ
 import sys, os, copy, textwrap, snack, string, time, re, shutil, hashlib
 from snack import *
 
@@ -34,7 +34,6 @@ import dnf.logging
 import dnf.plugin
 import dnf.persistor
 import dnf.rpm
-import dnf.util
 import dnf.cli.utils
 import dnf.yum.misc
 from subprocess import call
@@ -133,7 +132,7 @@ class TuiCommand(commands.Command):
         #Reload the conf and args
             env_path = os.getcwd() + "/.env-dnf"
             if os.path.exists(env_path):
-                self.read_environ(env_path)
+                read_environ(env_path)
 
                 install_root_from_env = os.environ['HIDDEN_ROOTFS']
                 self.opts.installroot = install_root_from_env
@@ -189,18 +188,6 @@ class TuiCommand(commands.Command):
             logger.debug("Enter tui interface.")
             self.PKGINSTDispMain()
 
-    def read_environ(self, file):
-        try:
-            with open(file, 'r') as fd:
-                lines = fd.readlines()
-                for line in lines:
-                    #if "LD_PRELOAD" in line:
-                    env = line.rstrip().split('=', 1)
-                    os.environ[env[0]] = env[1]
-        except IOError:
-            logger.info(_('Error: Cannot open %s for reading'), self.base.output.term.bold(file))
-            sys.exit(1)
-
     def run_dnf_command(self, s_line):
         """Execute the subcommand you put in.
         """
@@ -234,20 +221,20 @@ class TuiCommand(commands.Command):
             self.screen = None
         notype_pkgs = self.PKG_filter(selected_pkgs)
         if self.install_type == ACTION_GET_SOURCE:
-            srcdir_path = self.base.conf.srpm_repodir
-            destdir_path = self.base.conf.srpm_download
+            srcdir_path = os.environ['SRPM_REPO_DIR']
+            destdir_path = os.environ['SRPM_DESTINATION_DIR']
             fetchSPDXorSRPM('srpm', notype_pkgs, srcdir_path, destdir_path)
         elif self.install_type == ACTION_GET_SPDX:
-            srcdir_path = self.base.conf.spdx_repodir
-            destdir_path = self.base.conf.spdx_download
+            srcdir_path = os.environ['SPDX_REPO_DIR']
+            destdir_path = os.environ['SPDX_DESTINATION_DIR']
             fetchSPDXorSRPM('spdx', notype_pkgs, srcdir_path, destdir_path)
 
     def GET_RKG(self, selected_pkgs):
         if self.screen != None:
             StopHotkeyScreen(self.screen)
             self.screen = None
-        srcdir_path = self.base.conf.rpm_repodir
-        destdir_path = self.base.conf.rpm_download
+        srcdir_path = os.environ['RPM_REPO_DIR']
+        destdir_path = os.environ['RPM_DESTINATION_DIR']
         fetchSPDXorSRPM('rpm', selected_pkgs, srcdir_path, destdir_path)
 
     def GET_ALL(self, selected_pkgs):
@@ -255,12 +242,12 @@ class TuiCommand(commands.Command):
             StopHotkeyScreen(self.screen)
             self.screen = None
         fetchSPDXorSRPM('rpm', selected_pkgs, 
-                    self.base.conf.rpm_repodir, self.base.conf.rpm_download)
+                    os.environ['RPM_REPO_DIR'], os.environ['RPM_DESTINATION_DIR'])
         notype_pkgs = self.PKG_filter(selected_pkgs)
         fetchSPDXorSRPM('srpm', notype_pkgs, 
-                    self.base.conf.srpm_repodir, self.base.conf.srpm_download)
+                    os.environ['SRPM_REPO_DIR'], os.environ['SRPM_DESTINATION_DIR'])
         fetchSPDXorSRPM('spdx', notype_pkgs, 
-                    self.base.conf.spdx_repodir, self.base.conf.spdx_download)
+                    os.environ['SPDX_REPO_DIR'], os.environ['SPDX_DESTINATION_DIR'])
 
     def Read_ConfigFile(self, display_pkgs, selected_pkgs):
         f = open(self.CONFIG_FILE, "r")
