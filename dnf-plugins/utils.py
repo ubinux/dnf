@@ -27,6 +27,16 @@ import re, shutil, urllib.request, librepo, filecmp
 _USER_HZ = os.sysconf(os.sysconf_names['SC_CLK_TCK'])
 logger = logging.getLogger('dnf')
 
+def read_environ(file):
+    try:
+        with open(file, 'r') as fd:
+            lines = fd.readlines()
+            for line in lines:
+                env = line.rstrip().split('=', 1)
+                os.environ[env[0]] = env[1]
+    except IOError:
+        logger.info(_('Error: Cannot open %s for reading'), self.base.output.term.bold(file))
+        sys.exit(1)
 
 def fetchSPDXorSRPM(option, install_pkgs, srcdir_path, destdir_path):
     """Add for spdx/srpm file cp operation.
