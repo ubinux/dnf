@@ -59,9 +59,9 @@ class Fetch_srpmCommand(commands.Command):
 
     def pre_configure(self):
         if self.opts.with_call:
-            pass
+            return
         else:
-        #Reload the conf and args
+            #Reload the conf and args
             env_path = os.getcwd() + "/.env-dnf"
             if os.path.exists(env_path):
                 read_environ(env_path)
@@ -69,6 +69,18 @@ class Fetch_srpmCommand(commands.Command):
                 self.opts.installroot = install_root_from_env
                 self.opts.config_file_path = install_root_from_env + "/etc/dnf/dnf-host.conf"
                 self.opts.logdir = os.path.dirname(install_root_from_env)
+              
+                #call subprocess dnf
+                dnf_args = ["dnf", "fetchsrpm", "--call", "-c{}".format(
+                            self.opts.config_file_path), "--installroot={}".format(
+                            self.opts.installroot), "--setopt=logdir={}".format(
+                            self.opts.logdir), "--releasever=None"] + self.opts.pkg_specs
+
+                exit_code = call(dnf_args)
+                if exit_code != 0:
+                    raise dnf.exceptions.Error(_("Failed to call dnf fetchspdx"))
+               
+                sys.exit(0)
 
     def configure(self):
         """Verify that conditions are met so that this command can run.
@@ -104,17 +116,6 @@ class Fetch_srpmCommand(commands.Command):
         if self.opts.installroot:  #if used in toolchain
             if self.opts.with_call:
                 self.fetchSRPM(self.opts.pkg_specs)
-            else:
-                dnf_args = ["dnf", "fetchsrpm", "--call", "-c{}".format(
-                            self.opts.config_file_path), "--installroot={}".format(
-                            self.opts.installroot), "--setopt=logdir={}".format(
-                            self.opts.logdir), "--releasever=None"] + self.opts.pkg_specs
-
-                exit_code = call(dnf_args)
-                if exit_code != 0:
-                    raise dnf.exceptions.Error(_("Failed to call dnf fetchspdx"))
-               
-                sys.exit(0)
 
         else:
             self.fetchSRPM(self.opts.pkg_specs)

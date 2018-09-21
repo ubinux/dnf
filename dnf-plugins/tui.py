@@ -125,11 +125,13 @@ class TuiCommand(commands.Command):
 
     def pre_configure(self):
         if self.opts.with_init:
-            return
+            plugin_dir = os.path.split(__file__)[0]
+            os.system("%s/dnf-host init" %plugin_dir)
+            sys.exit(0)
         if self.opts.with_call:
             return
         else:
-        #Reload the conf and args
+            #Reload the conf and args
             env_path = os.getcwd() + "/.env-dnf"
             if os.path.exists(env_path):
                 read_environ(env_path)
@@ -137,28 +139,11 @@ class TuiCommand(commands.Command):
                 install_root_from_env = os.environ['HIDDEN_ROOTFS']
                 self.opts.installroot = install_root_from_env
                 self.opts.config_file_path = install_root_from_env + "/etc/dnf/dnf-host.conf"
-
                 self.opts.logdir = os.path.dirname(install_root_from_env)
+                #call subprocess dnf
+                tar = False
+                old_md5 = None
 
-    def configure(self):
-        self.cli.demands = dnf.cli.commands.shell.ShellDemandSheet()
-        demands = self.cli.demands
-        demands.root_user = False
-      
-
-    def run(self, command=None, argv=None):
-        plugin_dir = os.path.split(__file__)[0]
-        if self.opts.with_init:
-            os.system("%s/dnf-host init" %plugin_dir)
-            sys.exit(0)
-
-        if self.opts.installroot:  #if used in toolchain
-            tar = False
-            old_md5 = None
-            if self.opts.with_call:
-                logger.debug("Enter tui interface.")
-                self.PKGINSTDispMain()
-            else:
                 rpm_dbfile = self.opts.installroot + "/var/lib/rpm/Packages"
                 if os.path.exists(rpm_dbfile):
                     f1 = open(rpm_dbfile, 'rb')
@@ -181,9 +166,24 @@ class TuiCommand(commands.Command):
                     tar = True
 
                 if tar: 
+                    plugin_dir = os.path.split(__file__)[0]
                     os.environ["LD_PRELOAD"] = ''
                     os.system("%s/dnf-host --rootfs-tar" %plugin_dir)
                 sys.exit(0)
+            
+
+    def configure(self):
+        self.cli.demands = dnf.cli.commands.shell.ShellDemandSheet()
+        demands = self.cli.demands
+        demands.root_user = False
+
+    def run(self, command=None, argv=None):
+        if self.opts.installroot:  #if used in toolchain
+            if self.opts.with_call:
+                logger.debug("Enter tui interface.")
+                self.PKGINSTDispMain()
+            else:
+                pass
         else:
             logger.debug("Enter tui interface.")
             self.PKGINSTDispMain()
