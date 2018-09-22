@@ -205,10 +205,21 @@ EOF
         echo -n "arch_compat: ${MACHINE_ARCH}: all any noarch ${ARCH} ${MACHINE_ARCH}" > $HIDDEN_ROOTFS_DIR/etc/rpmrc
     fi
 
-    echo "Scanning repo ..."
-    travFolder $DEFINE_REPO_DIR
-    sed -i "s/:$/\n/g" $HIDDEN_ROOTFS_DIR/etc/dnf/vars/arch
-    sed -i "s/:$//g" $HIDDEN_ROOTFS_DIR/etc/rpmrc
+    if [ ${DEFINE_REPO_DIR:0:4} = "http" ];then
+
+cat > $HIDDEN_ROOTFS_DIR/etc/yum.repos.d/oe.repo  <<EOF
+[base]
+name=oe_repo
+baseurl=$DEFINE_REPO_DIR
+enabled=1
+gpgcheck=0 
+EOF
+    else
+        echo "Scanning repo ..."
+        travFolder $DEFINE_REPO_DIR
+        sed -i "s/:$/\n/g" $HIDDEN_ROOTFS_DIR/etc/dnf/vars/arch
+        sed -i "s/:$//g" $HIDDEN_ROOTFS_DIR/etc/rpmrc
+    fi
 }
 
 dnf-init() {
@@ -318,6 +329,7 @@ Repos-rootfs(){
     echo "Unpacking tar file to target dir"
     sudo tar -xjf ../${ROOTFS_TAR} -C ${TARGET_ROOTFS}/rootfs-${RELEASE}-${Date} --numeric-owner
     sudo rm ${TARGET_ROOTFS}/rootfs-${RELEASE}-${Date}/etc/dnf/dnf-host.conf
+    sudo rm ${TARGET_ROOTFS}/rootfs-${RELEASE}-${Date}/etc/yum.repos.d/oe.repo
     rm ../${ROOTFS_TAR}
     echo "Target dir is ${TARGET_ROOTFS}/rootfs-${RELEASE}-${Date}"
 }
