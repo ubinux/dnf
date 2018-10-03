@@ -331,6 +331,10 @@ Repos-rootfs(){
     sudo rm ${TARGET_ROOTFS}/rootfs-${RELEASE}-${Date}/etc/dnf/dnf-host.conf
     sudo rm ${TARGET_ROOTFS}/rootfs-${RELEASE}-${Date}/etc/yum.repos.d/oe.repo
     rm ../${ROOTFS_TAR}
+    if [ ! -f ${TARGET_ROOTFS}/rootfs-${RELEASE}-${Date} ]; then
+        echo "The operation has been interrupted"
+        exit 1
+    fi
     echo "Target dir is ${TARGET_ROOTFS}/rootfs-${RELEASE}-${Date}"
 }
 
