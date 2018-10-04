@@ -21,15 +21,15 @@ Now, dnf can be used both on host and target(e.g. an arm board) environment.
 ### 3.1.1 Prepare
 
 Make sure you have prepared the following:
-  * toolchain(mandatory)
-  * rpm packages(mandatory)
-  * Ensure there is a config file /etc/dnf/dnf.conf in your host (mandatory in ubuntu)
-  * srpm packages(optional)
-  * spdx files(optional)
+  * toolchain (mandatory)
+  * rpm packages (mandatory)
+  * add a config file /etc/dnf/dnf.conf (mandatory in ubuntu)
+  * srpm packages (optional)
+  * spdx files (optional)
 
   Note
-  * SELinux must be closed.
-  * Run as a root user.
+  - SELinux must be closed.
+  - Run as root.
 
 #### (1) toolchain
 &emsp;&emsp;install the cross-development toolchain(e.g. for i586: poky-glibc-x86_64-meta-toolchain-i586-toolchain-2.5 .sh) and set up environment of toolchain.
@@ -41,15 +41,16 @@ Make sure you have prepared the following:
         - If you change a terminal, you should source toolchain again.
 ```
 #### (2) rpm packages
-&emsp;&emsp;Created by yocto, for example, one repo director in rpm format for x86 likes as following:
+&emsp;&emsp;Put all packages to one repo directory as following:
 ```
-      # ls /home/test/workdir/dnf_test/oe_repo/
-        rpm
-      # ls /home/test/workdir/dnf_test/oe_repo/rpm/
-        i586  noarch  qemux86
+      # ls /home/test/workdir/dnf_test/oe_repo/rpm
+        acl-2.2.52-r0.i586.rpm
+        acl-dbg-2.2.52-r0.i586.rpm
+        acl-dev-2.2.52-r0.i586.rpm
+        ......
 ```
 #### (3) srpm packages
-&emsp;&emsp;If you enable "archiver " in you Yocto buid environment, you can get srpm packages for every OSS you build.
+&emsp;&emsp;If you enable "archiver" in you Yocto buid environment, you can get srpm packages for every OSS you build.
 ```
       # ls /home/test/workdir/dnf_test/srpm_repo
         bash-4.3.30-r0.src.rpm
@@ -67,7 +68,7 @@ Make sure you have prepared the following:
 
 ### 3.1.2 Initialize
 
-If you want to ctreate an empty rootfs, you have to run "dnf tui init".
+If you want to ctreate an empty rootfs, you have to run "dnf tui --init".
 
 ```
 # dnf tui --init
@@ -128,11 +129,14 @@ Save the RPM file to the directory.
 
 ```
  /home/test/dnf/.rootfs-x86 is not exist. mkdir /home/test/dnf/.rootfs-x86. 
-Creating repo
+Creating repo ...
+
+Scanning repo ...
+#
 
   Note
     - Because dnf tui reads configuration from `pwd`, please make sure the above steps are in the same directory same as you run init.
-    - Dnf tui will save what you have done continuous until you run init again.
+    - Dnf tui will save what you have done until you run init again.
 ```
 
 After init, then, you can manage packages by TUI or command line.
@@ -531,25 +535,9 @@ After init, if you want to manage srpm or spdx files without installation, you c
 #### (1) configure rpm repo (mandatory)  
 &emsp;&emsp;The same as using dnf on the other Distro (e.g. Fedora), you have to configure your rpm repo in /etc/yum.repos.d/Base.repo.
 
-#### (2) configure srpm and spdx (optional)  
-&emsp;&emsp;If you want to manage srpm or spdx files on target, you have to configure repository in /etc/dnf/dnf.conf.
-
-&emsp;&emsp;For example:
-```
-        # cat /etc/dnf/dnf.conf
-        [main]
-        gpgcheck=1
-        installonly_limit=3
-        clean_requirements_on_remove=True
-        spdx_repodir=http://192.168.65.144/oe_repo/spdx_repo
-        spdx_download=/home/root/spdx_download
-        srpm_repodir=http://192.168.65.144/oe_repo/srpm_repo
-        srpm_download=/home/root/srpm_download
-```
-
 ### 3.2.2 Usage
 
-The same as dnf tui.
+The same as dnf.
 
 # 4. Documentation
 
