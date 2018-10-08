@@ -33,8 +33,8 @@ Make sure you have prepared the following:
 #### (1) toolchain
 &emsp;&emsp;install the cross-development toolchain(e.g. for i586: poky-glibc-x86_64-meta-toolchain-i586-toolchain-2.5 .sh) and set up environment of toolchain.
 ```
-      $ sh poky-glibc-x86_64-meta-toolchain-i586-toolchain-2.5.sh
-      $ . /opt/poky/2.5/environment-setup-i586-poky-linux
+      # sh poky-glibc-x86_64-meta-toolchain-i586-toolchain-2.5.sh
+      # . /opt/poky/2.5/environment-setup-i586-poky-linux
       Note
         - When you compilering toochain, make sure you have patched the patch of patches-yocto.
         - If you change a terminal, you should source toolchain again.
@@ -42,15 +42,15 @@ Make sure you have prepared the following:
 #### (2) rpm packages
 &emsp;&emsp;Created by yocto, for example, one repo director in rpm format for x86 likes as following:
 ```
-      $ ls /home/test/workdir/dnf_test/oe_repo/
+      # ls /home/test/workdir/dnf_test/oe_repo/
         rpm
-      $ ls /home/test/workdir/dnf_test/oe_repo/rpm/
+      # ls /home/test/workdir/dnf_test/oe_repo/rpm/
         i586  noarch  qemux86
 ```
 #### (3) srpm packages
 &emsp;&emsp;If you enable "archiver " in you Yocto buid environment, you can get srpm packages for every OSS you build.
 ```
-      $ ls /home/test/workdir/dnf_test/srpm_repo
+      # ls /home/test/workdir/dnf_test/srpm_repo
         bash-4.3.30-r0.src.rpm
         ......
 ```
@@ -59,7 +59,7 @@ Make sure you have prepared the following:
 #### (4) spdx files (https://github.com/dl9pf/meta-spdxscanner)
 &emsp;&emsp;Please reference to the README of meta-spdxscanner to get spdx files bu Yocto.
 ```
-      $ ls /home/test/workdir/dnf_test/spdx_repo
+      # ls /home/test/workdir/dnf_test/spdx_repo
         bash-4.3.30.spdx
         ......
 ```
@@ -68,8 +68,8 @@ Make sure you have prepared the following:
 
 If you want to ctreate an empty rootfs, you have to run "dnf tui init".
 
-$ dnf tui --init
 ```
+# dnf tui --init
 Deleting temp rootfs......
 =================================================================
 Enter repo directory (default: /home/test/dnf/oe_repo): 
@@ -145,7 +145,7 @@ After init, then, you can manage packages by TUI or command line.
 
   By the following command you can enter the main interface of TUI.
   ``` 
-      $ dnf tui
+      # dnf tui
         ┌────────────────────────┤ Select your operation ├─────────────────────────┐
         │                                                                          │
         │ Install  --->                                                            │
@@ -508,18 +508,18 @@ file system or Reference2 to build systemd based root file system.
 After init, if you want to manage srpm or spdx files without installation, you can use the subcommands as following:
 <br>(1) fetchsrpm
 ```
-      $ dnf fetchsrpm bash
+      # dnf fetchsrpm bash
       ......
-      $ ls srpm_download/
+      # ls srpm_download/
       bash-4.3.30.src.rpm
 ```
   (2) fetchspdx
 <br>&emsp;&emsp;fetchsrpm is the same as fetchspdx
 
 ```	
-      $ dnf fetchspdx bash 
+      # dnf fetchspdx bash 
       ......
-      $ ls spdx_download/
+      # ls spdx_download/
       bash-4.3.30.spdx
 ```
 
