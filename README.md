@@ -6,8 +6,8 @@ From yocto2.3, rpm5 and smart are replaced by rpm4 and dnf. So this README is fo
 
 # 2. Overview
 ***
-Since existing dnf can not be used on host(e.g. a x86 PC with Linux), we developed dnf-host. The following functions have been developed.
-  1. Add new command dnf-host to make dnf to work on host 
+Since existing dnf can not be used on cross environment(e.g. a x86 PC with Linux), we developed dnf tui. The following functions have been developed.
+  1. Add new command dnf tui --init to make dnf to work on host 
   2. Dnf TUI functions
   3. Manage SPDX files
   4. Manage SRPM files
@@ -66,9 +66,9 @@ Make sure you have prepared the following:
 
 ### 3.1.2 Initialize
 
-If you want to ctreate an empty rootfs, you have to run "dnf-host init".
+If you want to ctreate an empty rootfs, you have to run "dnf tui init".
 
-$ dnf-host init
+$ dnf tui --init
 ```
 Deleting temp rootfs......
 =================================================================
@@ -130,22 +130,22 @@ Save the RPM file to the directory.
 Creating repo
 
   Note
-    - Because dnf-host reads configuration from `pwd`, please make sure the above steps are in the same directory same as you run init.
-    - Dnf-host will save what you have done continuous until you run init again.
+    - Because dnf tui reads configuration from `pwd`, please make sure the above steps are in the same directory same as you run init.
+    - Dnf tui will save what you have done continuous until you run init again.
 ```
 
 After init, then, you can manage packages by TUI or command line.
 
 ### 3.1.3 Manage packages in TUI
 
-  Dnf TUI(textual user interface) Function is developed for dnf-host. With TUI, it is easy to customize rootfs of target.
+  Dnf TUI(textual user interface) Function is developed for dnf. With TUI, it is easy to customize rootfs of target.
   <br/>Note
   <br/>&emsp;- Please make sure your screen is at least 24 lines and 80 columns.
   <br/>&emsp;- In "Confirm" interface and "License" interface, you can use "←" or "→" to choose "Yes" or "No", and use "Enter" to confirm. "F4" can help you back to previous interface.
 
   By the following command you can enter the main interface of TUI.
   ``` 
-      $ dnf-host tui
+      $ dnf tui
         ┌────────────────────────┤ Select your operation ├─────────────────────────┐
         │                                                                          │
         │ Install  --->                                                            │
@@ -202,8 +202,8 @@ After init, then, you can manage packages by TUI or command line.
 	    as the initialization manager.
 
 ```
-##### (1). dnf-host TUI can help you filter GPLv3
-&emsp;&emsp;If you select "install" and "NEW" in above, dnf-host will ask you whether you want to install packages
+##### (1). dnf TUI can help you filter GPLv3
+&emsp;&emsp;If you select "install" and "NEW" in above, dnf tui will ask you whether you want to install packages
 	 with license of GPLv3.
 ```	 
 
@@ -318,7 +318,7 @@ After init, then, you can manage packages by TUI or command line.
 ```
 ##### (5). Load package file
 &emsp;&emsp;After select "Load package file", when user enter the name of configuration file and enter
-"OK", dnf-host will install the package which the configuration list.
+"OK", dnf tui will install the package which the configuration list.
 ```
 
            ┌──────────────────┤   Config File   ├───────────────────┐
@@ -503,47 +503,12 @@ file system or Reference2 to build systemd based root file system.
           - [A] Means the package has been selected, installed and will be used to created.
 ```
 
-### 3.1.4 Manage packages by command line
+### 3.1.4 Manage srpm or spdx file by command line
 
-After init, you can use dnf-host to manage packages such as using dnf in other Distro (e.g. Fedora).
-
-More information please reference to https://fedoraproject.org/wiki/DNF?rd=Dnf.
-
-e.g.
-```
-      $ dnf-host info bash
-      $ dnf-host install bash
-      ......
-
-```
-
-#### 3.1.4.1 manage srpm packages & spdx files
-
-If you want to manage srpm or spdx you can run "dnf-host install" by adding the following options:
-
-   (1) --with-srpm
-```
-      $ dnf-host install --with-srpm bash
-      ......
-
-      $ ls srpm_download/
-      bash-4.3.30.src.rpm
-```
-   (2) --with-spdx
-```
-      $ dnf-host install --with-spdx bash
-      ......
-
-      $ ls spdx_download/
-      bash-4.3.30.spdx
-```
-
-#### 3.1.4.2 manage srpm or spdx only
-
-If you want to manage srpm or spdx files without installation, you can use the subcommands as following:
+After init, if you want to manage srpm or spdx files without installation, you can use the subcommands as following:
 <br>(1) fetchsrpm
 ```
-      $ dnf-host fetchsrpm bash
+      $ dnf fetchsrpm bash
       ......
       $ ls srpm_download/
       bash-4.3.30.src.rpm
@@ -552,7 +517,7 @@ If you want to manage srpm or spdx files without installation, you can use the s
 <br>&emsp;&emsp;fetchsrpm is the same as fetchspdx
 
 ```	
-      $ dnf-host fetchspdx bash 
+      $ dnf fetchspdx bash 
       ......
       $ ls spdx_download/
       bash-4.3.30.spdx
@@ -566,11 +531,11 @@ If you want to manage srpm or spdx files without installation, you can use the s
 &emsp;&emsp;The same as using dnf on the other Distro (e.g. Fedora), you have to configure your rpm repo in /etc/yum.repos.d/Base.repo.
 
 #### (2) configure srpm and spdx (optional)  
-&emsp;&emsp;If you want to manage srpm or spdx files on target, you have to configure repository in /etc/dnf/dnf-host.conf.
+&emsp;&emsp;If you want to manage srpm or spdx files on target, you have to configure repository in /etc/dnf/dnf.conf.
 
 &emsp;&emsp;For example:
 ```
-        # cat /etc/dnf/dnf-host.conf
+        # cat /etc/dnf/dnf.conf
         [main]
         gpgcheck=1
         installonly_limit=3
@@ -583,7 +548,7 @@ If you want to manage srpm or spdx files without installation, you can use the s
 
 ### 3.2.2 Usage
 
-The same as dnf-host.
+The same as dnf tui.
 
 # 4. Documentation
 
