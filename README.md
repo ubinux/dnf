@@ -23,12 +23,13 @@ Now, dnf can be used both on host and target(e.g. an arm board) environment.
 Make sure you have prepared the following:
   * toolchain(mandatory)
   * rpm packages(mandatory)
+  * Ensure there is a config file /etc/dnf/dnf.conf in your host (mandatory in ubuntu)
   * srpm packages(optional)
   * spdx files(optional)
 
   Note
   * SELinux must be closed.
-  * Run as a non-root user that has sudo authority.
+  * Run as a root user.
 
 #### (1) toolchain
 &emsp;&emsp;install the cross-development toolchain(e.g. for i586: poky-glibc-x86_64-meta-toolchain-i586-toolchain-2.5 .sh) and set up environment of toolchain.
