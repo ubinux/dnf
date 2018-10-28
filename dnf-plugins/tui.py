@@ -122,6 +122,10 @@ class TuiCommand(commands.Command):
         parser.add_argument("--call", dest="with_call",
                           action="store_true", default=None,
                           help=_("Call the dnf tui for toolchain"))
+        parser.add_argument("--auto", action="store_true", dest="auto",
+                                 default=None, help=_("automatically finish installation operation"))
+        parser.add_argument("-i", "--installlist", dest="install_list",
+                          help=_("Use install list for dnf installation"))
 
     def pre_configure(self):
         if self.opts.with_init:
@@ -140,6 +144,12 @@ class TuiCommand(commands.Command):
                 self.opts.installroot = install_root_from_env
                 self.opts.config_file_path = install_root_from_env + "/etc/dnf/dnf-host.conf"
                 self.opts.logdir = os.path.dirname(install_root_from_env)
+
+                if self.opts.auto:
+                    plugin_dir = os.path.split(__file__)[0]
+                    os.system("%s/dnf-host --install_list %s" %(plugin_dir, self.opts.install_list))
+                    sys.exit(0)
+                 
                 #call subprocess dnf
                 tar = False
                 old_md5 = None
@@ -171,6 +181,9 @@ class TuiCommand(commands.Command):
                     os.system("%s/dnf-host --rootfs-tar" %plugin_dir)
                 sys.exit(0)
             
+            else:
+                logger.warning("Please Init the environment first!\nUsage: dnf tui --init")
+                sys.exit(0)
 
     def configure(self):
         self.cli.demands = dnf.cli.commands.shell.ShellDemandSheet()
