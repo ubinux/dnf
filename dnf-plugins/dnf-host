@@ -353,6 +353,9 @@ Install_pkg_from_configfile(){
       if [ -f $INSTALL_LIST ]; then
           PKG_LIST=`cat $INSTALL_LIST`
           dnf -c ${HIDDEN_ROOTFS}/etc/dnf/dnf-host.conf --setopt=reposdir=${HIDDEN_ROOTFS}/etc/yum.repos.d --repofrompath=oe-repo,${REPO_DIR} --installroot=${HIDDEN_ROOTFS} --setopt=logdir=$WORKDIR/ --nogpgcheck $* install $PKG_LIST --releasever=None
+          if $FETCH_ALL; then
+              dnf -c ${HIDDEN_ROOTFS}/etc/dnf/dnf-host.conf --installroot=${HIDDEN_ROOTFS} fetchall $PKG_LIST
+          fi
       else
           echo "No such config file, please check your input!"
           exit 0
@@ -407,6 +410,9 @@ do
         --install_list)
                 INSTALL_LIST=$2
                 shift 2
+                ;;
+        --fetch-all)
+                FETCH_ALL="true"
                 ;;
         -D)
                 set -x

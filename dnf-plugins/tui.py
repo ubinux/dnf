@@ -147,7 +147,7 @@ class TuiCommand(commands.Command):
 
                 if self.opts.auto:
                     plugin_dir = os.path.split(__file__)[0]
-                    os.system("%s/dnf-host --install_list %s" %(plugin_dir, self.opts.install_list))
+                    os.system("%s/dnf-host --fetch-all --install_list %s" %(plugin_dir, self.opts.install_list))
                     sys.exit(0)
                  
                 #call subprocess dnf
