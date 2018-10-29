@@ -331,14 +331,118 @@ dnf-show() {
     fi
 }
 
+print_progess() {
+    let local complete_data=$3*$1*2/100
+    let bar_num=$1+1
+    bar="`seq -s '#' $bar_num | sed 's/[0-9]//g'`"
+    printf "\rprogress:[%-50s]%.0f%%" "$bar" "$2"
+    printf " [${complete_data}K/${3}K]"
+}
+
+#parameter
+#$1 is tar file name
+#$2 is tared directory
+compress() {
+    total_size_show=$(du -sc ${@#$1} | sed '$!d' | awk '{print $1}' ) #size of all files
+    total_size=$(du -sc $(find ${@#$1} -type f) | sed '$!d' | awk '{print $1}' )
+    let per_size=${total_size}/50
+    let per_size=${per_size}+1
+
+    #used to accpet the output of tar
+    tmpfifo=/tmp/tmpfifo
+    if [  -f $tmpfifo ];then
+    :
+    else
+        mkfifo $tmpfifo &> /dev/null
+    fi
+    (
+    compress_data_size=0
+    current_file_size=0
+    progress_num=0
+    print_progess 0 0 $total_size_show
+    while read line
+    do
+        if [ -f "$line" -a ! -L "$line" ]; then
+            current_file_size=$(du -s $line | awk '{print $1}' )
+            let compress_data_size=${compress_data_size}+${current_file_size}
+            if [ $compress_data_size -ge $per_size ]; then
+                rate=$(echo "scale=2;${compress_data_size}/${total_size_show}"|bc)
+                percent=$(echo "$rate*100"|bc)
+                num=$(echo "$rate*50"|bc)
+                progress_num=${num%.*} #transform float to integer
+                print_progess $progress_num $percent $total_size_show
+                if [ ${progress_num} -ge 49 ]; then
+                    print_progess 50 100 $total_size_show
+                    rm -rf $tmpfifo
+                    break
+                fi
+            fi
+        fi
+    done<$tmpfifo
+    echo
+    ) &
+    child_PID=$!
+    #call tar execution
+    sudo tar cjvf "$@" >$tmpfifo 2>/dev/null
+    return_value=$?
+    wait ${child_PID}
+    return ${return_value}
+}
+
+decompress() {
+    total_size=0
+    for file_size in $(tar tvvf $1 | awk '{print $3}'); do
+        if [ "$file_size" = "${file_size//[^0-9]/}" ]; then
+            total_size=$((total_size+file_size))
+        fi
+    done
+
+    #used to accpet the output of tar
+    tmpfifo=/tmp/tmpfifo
+    if [  -f $tmpfifo ];then
+    :
+    else
+        mkfifo $tmpfifo &> /dev/null
+    fi
+    (
+    decompress_data_size=0
+    current_file_size=0
+    progress_num=0
+    print_progess $progress_num 0 $total_size_show
+    while read line
+    do
+        current_file_size=$(echo $line | awk '{print $3}')
+        let decompress_data_size=${decompress_data_size}+${current_file_size}
+        rate=$(echo "scale=2;${decompress_data_size}/${total_size}"|bc)
+        percent=$(echo "$rate*100"|bc)
+        num=$(echo "$rate*50"|bc)
+        progress_num=${num%.*} #transform float to integer
+        let total_size_show=$total_size/1024 #transform size to KB
+        print_progess $progress_num $percent $total_size_show
+        if [ ${progress_num} -ge 50 ]; then
+            print_progess 50 100 $total_size_show
+            rm -rf $tmpfifo
+            break
+        fi
+    done<$tmpfifo
+    echo
+    ) &
+    child_PID=$!
+    #call tar execution
+    sudo tar xjvvf "$@" >$tmpfifo 2>/dev/null
+    return_value=$?
+    wait ${child_PID}
+    return ${return_value}
+}
+
 Repos-rootfs(){
     cd ${HIDDEN_ROOTFS}
     echo "Packing the tar file"
-    tar -cjf ../${ROOTFS_TAR} ./*
+    compress ../${ROOTFS_TAR} ./*
     unset LD_PRELOAD
     sudo mkdir -p ${TARGET_ROOTFS}/rootfs-${RELEASE}-${Date}
     echo "Unpacking tar file to target dir"
-    sudo tar -xjf ../${ROOTFS_TAR} -C ${TARGET_ROOTFS}/rootfs-${RELEASE}-${Date} --numeric-owner
+    decompress ../${ROOTFS_TAR} -C ${TARGET_ROOTFS}/rootfs-${RELEASE}-${Date} --numeric-owner
     sudo rm ${TARGET_ROOTFS}/rootfs-${RELEASE}-${Date}/etc/dnf/dnf-host.conf
     sudo rm ${TARGET_ROOTFS}/rootfs-${RELEASE}-${Date}/etc/yum.repos.d/oe.repo
     rm -i ../${ROOTFS_TAR}
