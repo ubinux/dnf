@@ -38,6 +38,18 @@ def read_environ(file):
         logger.info(_('Error: Cannot open %s for reading'), self.base.output.term.bold(file))
         sys.exit(1)
 
+def PKG_filter(packages):
+    strings_pattern_end = ('-dev', '-doc', '-dbg', '-staticdev', '-ptest')
+    notype_pkgs = packages
+    for pkg in packages:
+        if "-locale-" in pkg.name:
+            notype_pkgs.remove(pkg)
+        elif "-localedata-" in pkg.name:
+            notype_pkgs.remove(pkg)
+        elif pkg.name.endswith(strings_pattern_end):
+            notype_pkgs.remove(pkg)
+    return notype_pkgs
+
 def fetchSPDXorSRPM(option, install_pkgs, srcdir_path, destdir_path):
     """Add for spdx/srpm file cp operation.
 
