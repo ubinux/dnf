@@ -515,6 +515,10 @@ e.g.
       $ dnf-host install bash
       ......
 
+      Note
+	If you use command line to manage packages, dnf-host will only modify the hidden rootfs(e.g. `pwd`/.rootfs-x86) 
+	but not the rootfs directory user defined by "dnf-host init".   
+
 ```
 
 #### 3.1.4.1 manage srpm packages & spdx files
